@@ -1,0 +1,42 @@
+name: 台股大單監控
+
+on:
+  schedule:
+    # 每 5 分鐘執行一次
+    # UTC 01:00–05:55 = 台灣時間 09:00–13:55，週一到週五
+    - cron: '*/5 1-5 * * 1-5'
+  workflow_dispatch:   # 允許手動觸發（測試用）
+
+jobs:
+  monitor:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout 程式碼
+        uses: actions/checkout@v4
+
+      - name: 設定 Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: 安裝套件
+        run: pip install requests
+
+      - name: 讀取上次狀態快取
+        uses: actions/cache@v4
+        with:
+          path: stock_state.json
+          key: stock-state-${{ github.run_id }}
+          restore-keys: |
+            stock-state-
+
+      - name: 執行大單偵測
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID:   ${{ secrets.TELEGRAM_CHAT_ID }}
+          LARGE_TRADE_THRESHOLD: '500'
+          LARGE_BID_THRESHOLD:   '1000'
+          VOLUME_SPIKE_RATIO:    '3.0'
+          VOLUME_SPIKE_MIN:      '200'
+        run: python stock_check_once.py
