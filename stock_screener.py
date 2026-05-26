@@ -98,9 +98,48 @@ def reset_daily_status():
     today = datetime.now().strftime("%Y-%m-%d")
     status = load_status()
     if status.get("date") != today:
-        status = {"date": today, "pushed_0930": {}, "pushed_1300": {}, "pushed_1400": {}}
+        # 保留昨日的正式入選結果供參考，今日重新開始
+        yesterday_formal = status.get("formal_candidates", {})
+        status = {
+            "date": today,
+            "pushed_0930": {},
+            "pushed_1300": {},
+            "pushed_1400": {},
+            "formal_candidates": yesterday_formal,  # 保留前日結果
+        }
         save_status(status)
     return status
+
+def validate_twse_data_quality(item: Dict, symbol: str) -> bool:
+    """驗證 TWSE 數據品質
+    檢查：成交量是否為 0（數據延遲信號）
+         價格跳躍是否異常（數據錯誤信號）
+         成交額是否過低（流動性不足）
+    """
+    try:
+        vol = int(float(item.get("tv", 0)))
+        price = float(item.get("z", 0))
+        amount = int(float(item.get("tlong", 0)))  # 成交額（單位：千元）
+
+        # 檢查 1: 成交量為 0（通常表示數據延遲或無交易）
+        if vol == 0:
+            logger.debug(f"{symbol}: 成交量為0，數據可能延遲")
+            return False
+
+        # 檢查 2: 成交額過低（流動性不足）
+        if amount < 50000:  # 50M 以下可能流動性不足
+            logger.debug(f"{symbol}: 成交額 {amount/1000:.1f}M 過低，流動性不足")
+            return False
+
+        # 檢查 3: 價格有效性（基本檢查）
+        if price <= 0:
+            logger.debug(f"{symbol}: 價格無效")
+            return False
+
+        return True
+    except Exception as e:
+        logger.debug(f"{symbol}: 數據驗證異常 {e}")
+        return False
 
 def update_cache_with_twse(cache: Dict, twse_data: Dict):
     """用 TWSE 實時數據更新快取"""
@@ -109,6 +148,11 @@ def update_cache_with_twse(cache: Dict, twse_data: Dict):
     for symbol, item in twse_data.items():
         if symbol not in cache:
             cache[symbol] = {"klines": []}
+
+        # 驗證數據品質
+        if not validate_twse_data_quality(item, symbol):
+            logger.debug(f"{symbol}: 數據未通過品質檢查，跳過此筆")
+            continue
 
         price = float(item.get("z", 0))
         vol = int(float(item.get("tv", 0)))
@@ -198,11 +242,11 @@ def send_telegram(text: str):
         return False
 
 def format_signal_0930(symbol: str, eval_result: Dict) -> str:
-    """09:30 早盤觀察格式"""
+    """09:30 監察清單｜低置信度 格式"""
     s = eval_result
     return (
-        f"🔍 <b>【早盤異動】{symbol}</b>\n"
-        f"⚠️  <i>盤中訊號，非收盤確認</i>\n"
+        f"🔍 <b>【監察清單｜低置信度】{symbol}</b>\n"
+        f"⚠️  <i>早盤出現強勢異動，僅供觀察，尚未收盤確認</i>\n"
         f"📊 評分: {s['score']}/3\n"
         f"  連陽: {s['consecutive_gain']} 根\n"
         f"  量倍: {s['volume_ratio']}x\n"
@@ -212,11 +256,11 @@ def format_signal_0930(symbol: str, eval_result: Dict) -> str:
     )
 
 def format_signal_1300(symbol: str, eval_result: Dict) -> str:
-    """13:00 尾盤候選格式"""
+    """13:00 中場更新｜中置信度 格式"""
     s = eval_result
     return (
-        f"📌 <b>【尾盤候選】{symbol}</b>\n"
-        f"⚠️  <i>盤中訊號，待收盤確認</i>\n"
+        f"📌 <b>【中場更新｜中置信度】{symbol}</b>\n"
+        f"⚠️  <i>仍維持強勢，成交量與價格條件改善，等待收盤確認</i>\n"
         f"📊 評分: {s['score']}/3\n"
         f"  連陽: {s['consecutive_gain']} 根\n"
         f"  量倍: {s['volume_ratio']}x\n"
@@ -226,12 +270,12 @@ def format_signal_1300(symbol: str, eval_result: Dict) -> str:
     )
 
 def format_signal_1400(symbol: str, eval_result: Dict) -> str:
-    """14:00 收盤確認格式"""
+    """14:00 正式入選｜高置信度 格式"""
     s = eval_result
-    emoji = "✅" if s['score'] >= 2 else "📈"
     return (
-        f"{emoji} <b>【收盤確認】{symbol}</b>\n"
-        f"📊 最終評分: {s['score']}/3\n"
+        f"✅ <b>【正式入選｜高置信度】{symbol}</b>\n"
+        f"📊 收盤資料確認符合週線主升浪條件，可列入正式觀察清單\n"
+        f"📈 最終評分: {s['score']}/3\n"
         f"  連陽: {s['consecutive_gain']} 根\n"
         f"  量倍: {s['volume_ratio']}x\n"
         f"  趨勢: {'↑ 上升' if s['uptrend'] else '→ 持平'}\n"
@@ -318,13 +362,23 @@ def main():
         status = load_status()
 
         # 推播所有符合條件的股票（今日首次推播）
+        # 同時更新「正式訊號紀錄」（只有此時段會寫入）
+        formal_candidates = {}
         for symbol in sorted(candidates.keys()):
             if symbol not in status.get("pushed_1400", {}):
                 msg = format_signal_1400(symbol, candidates[symbol]["eval"])
                 if send_telegram(msg):
                     status["pushed_1400"][symbol] = candidates[symbol]["score"]
-                    logger.info("✓ 推播 14:00: %s", symbol)
+                    # ✓ 只有 14:00 的結果才寫入正式訊號紀錄
+                    formal_candidates[symbol] = {
+                        "score": candidates[symbol]["score"],
+                        "eval": candidates[symbol]["eval"],
+                    }
+                    logger.info("✓ 推播 14:00: %s (加入正式觀察清單)", symbol)
 
+        # 更新正式訊號紀錄（僅在 14:00）
+        if formal_candidates:
+            status["formal_candidates"] = formal_candidates
         save_status(status)
 
     else:
