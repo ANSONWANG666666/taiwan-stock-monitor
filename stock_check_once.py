@@ -65,24 +65,40 @@ def fetch_stocks(tse: List[str], otc: List[str]) -> list:
     if not parts:
         return []
     headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/124.0",
         "Referer":    "https://mis.twse.com.tw/stock/index.jsp",
+        "Accept":     "application/json, text/plain, */*",
+        "Accept-Language": "zh-TW,zh;q=0.9,en-US;q=0.8,en;q=0.7",
     }
-    sess = requests.Session()
-    sess.headers.update(headers)
-    try:
-        sess.get("https://mis.twse.com.tw/stock/index.jsp", timeout=10)
-        r = sess.get(
-            "https://mis.twse.com.tw/stock/api/getStockInfo.jsp",
-            params={"ex_ch": "|".join(parts), "json": "1", "delay": "0",
-                    "_": int(time.time() * 1000)},
-            timeout=15,
-        )
-        r.raise_for_status()
-        return r.json().get("msgArray", [])
-    except Exception as e:
-        logger.error("TWSE API 失敗: %s", e)
-        return []
+
+    # 重試 3 次
+    for attempt in range(3):
+        try:
+            sess = requests.Session()
+            sess.headers.update(headers)
+
+            # Warm up session
+            sess.get("https://mis.twse.com.tw/stock/index.jsp", timeout=10)
+            time.sleep(0.5)
+
+            r = sess.get(
+                "https://mis.twse.com.tw/stock/api/getStockInfo.jsp",
+                params={"ex_ch": "|".join(parts), "json": "1", "delay": "0",
+                        "_": int(time.time() * 1000)},
+                timeout=15,
+            )
+            r.raise_for_status()
+            data = r.json().get("msgArray", [])
+            if data:
+                logger.info("TWSE API 成功（嘗試 %d）", attempt + 1)
+                return data
+        except Exception as e:
+            logger.warning("TWSE API 失敗（嘗試 %d/3）: %s", attempt + 1, str(e)[:100])
+            if attempt < 2:
+                time.sleep(2)  # 重試前等待 2 秒
+
+    logger.error("TWSE API 連接失敗，已重試 3 次")
+    return []
 
 
 def parse_item(item: dict) -> Optional[dict]:
@@ -102,7 +118,14 @@ def parse_item(item: dict) -> Optional[dict]:
     a_vols   = [i(x) for x in item.get("f", "0").split("_") if x]
 
     trade_vol = i(item.get("tv"))
-    trade_amt = price * trade_vol * 1000  # 成交金額（元）
+
+    # 優先使用 tlong 字段（TWSE API 直接提供的成交額，單位：千元），降級到計算值
+    tlong = i(item.get("tlong", 0))
+    if tlong > 0:
+        trade_amt = tlong * 1000  # 成交額（由千元轉換為元）
+        logger.debug(f"使用 tlong 字段: {item.get('c')} 成交額={trade_amt/1_000_000:.1f}M")
+    else:
+        trade_amt = price * trade_vol * 1000  # 降級：計算成交金額（元）
 
     return {
         "symbol":    item.get("c", ""),
@@ -160,7 +183,9 @@ def detect_alerts(snap: dict, vol_hist: List[int], prev_snap: dict) -> List[dict
     # ── 層級 1: 垃圾過濾 ──────────────────────────────────────────
     daily_vol_ratio = snap["total_vol"] / 50000  # 簡化: 假設日均量 5 萬張
 
-    if snap["total_vol"] < 3000 or snap["trade_amt"] < 200_000_000:
+    # 成交金額門檻：大於等級對應的最小金額，或成交額 > 1000 萬
+    min_amt = thresholds["min_trade_amt"]
+    if snap["total_vol"] < 3000 or (snap["trade_amt"] < min_amt and snap["trade_amt"] < 10_000_000):
         return []  # 不符合基本條件，跳過
 
     # ── 層級 2: 主力大單偵測 ──────────────────────────────────────
