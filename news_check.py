@@ -60,6 +60,9 @@ PERSISTENCE_W = {"one_off": 0.5, "short_term": 0.8, "structural": 1.2}
 EVENT_W = {"analyst_market_view": 0.4, "management_governance": 0.7,
            "corporate_action": 0.8, "other": 0.6}   # 未列出者 = 1.0
 
+# 論壇、社群貼文不是新聞，不送 Jev（例：CMoney 股市爆料同學會、PTT、Mobile01）
+FORUM_MARKERS = ("爆料同學會", "同學會", "PTT", "Mobile01", "Dcard", "論壇", "討論區")
+
 DIR_LABEL = {"positive": "利多", "negative": "利空", "mixed": "多空互見", "neutral": "中性"}
 
 
@@ -106,6 +109,8 @@ def fetch_news(symbol: str, name: str, hours: int = LOOKBACK_HOURS, limit: int =
         pub = it.findtext("pubDate")
         dt = email.utils.parsedate_to_datetime(pub).astimezone(TZ) if pub else None
         if dt and dt < cutoff:
+            continue
+        if any(m in title or m in source for m in FORUM_MARKERS):
             continue
         key = re.sub(r"[\W_]+", "", title)[:40]
         if not key or key in seen:
