@@ -8,3 +8,5 @@ screener_status.json
 jev_news_cache.json
 market_cache.json
 market_scan_state.json
+journal-data/
+jev_budget.json

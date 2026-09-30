@@ -21,6 +21,9 @@ concurrency:
   group: market-scan
   cancel-in-progress: false
 
+permissions:
+  contents: write   # 寫入 journal 分支
+
 jobs:
   scan:
     runs-on: ubuntu-latest
@@ -29,6 +32,13 @@ jobs:
     steps:
       - name: Checkout 程式碼
         uses: actions/checkout@v4
+
+      - name: Checkout 訊號紀錄簿（journal 分支）
+        uses: actions/checkout@v4
+        continue-on-error: true
+        with:
+          ref: journal
+          path: journal-data
 
       - name: 設定 Python 3.11
         uses: actions/setup-python@v5
@@ -46,6 +56,7 @@ jobs:
             market_cache.json
             market_scan_state.json
             jev_news_cache.json
+            jev_budget.json
           key: market-scan-${{ github.run_id }}
           restore-keys: |
             market-scan-
@@ -55,7 +66,26 @@ jobs:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID:   ${{ secrets.TELEGRAM_CHAT_ID }}
           TYPESAFE_API_KEY:   ${{ secrets.TYPESAFE_API_KEY }}
+          JEV_DAILY_LIMIT:    '100'
+          JOURNAL_DIR:        journal-data
           SCAN_DATE:          ${{ github.event.inputs.scan_date }}
           FORCE_SCAN:         ${{ github.event.inputs.force }}
           MAX_DETAIL:         '10'
         run: python market_scan.py
+      # 訊號紀錄簿存在 journal 分支；失敗會重試，不影響推播
+      - name: 儲存訊號紀錄
+        if: always()
+        run: |
+          [ -d journal-data/.git ] || exit 0
+          cd journal-data
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --cached --quiet && exit 0
+          git commit -q -m "訊號紀錄 $(TZ=Asia/Taipei date '+%F %H:%M') ${{ github.workflow }}"
+          for i in 1 2 3; do
+            git pull -q --rebase origin journal && git push -q origin HEAD:journal && exit 0
+            sleep $((i * 5))
+          done
+          echo "::warning::訊號紀錄推送失敗"
+

@@ -29,6 +29,7 @@ except ImportError:
     print("pip install requests")
     sys.exit(1)
 
+import journal
 from news_check import check_news, format_news_block
 
 logging.basicConfig(
@@ -447,6 +448,7 @@ def main():
                     ev["near_low"], ev["streak"], ev["reason"])
         if ev["qualified"]:
             candidates[symbol] = {"score": ev["score"], "eval": ev, "pct": pct,
+                                  "price": live.get("close", 0.0) if live else 0.0,
                                   "name": cache[symbol].get("name", "")}
 
     if not slot:
@@ -472,9 +474,11 @@ def main():
     formal = {}
     for symbol in to_push:
         c = candidates[symbol]
-        news_block = format_news_block(check_news(symbol, c["name"]), c["pct"])
-        msg = format_signal(slot, symbol, c["name"], c["eval"], c["pct"], news_block)
+        news = check_news(symbol, c["name"])
+        msg = format_signal(slot, symbol, c["name"], c["eval"], c["pct"], format_news_block(news, c["pct"]))
         if send_telegram(msg):
+            journal.record("screener", symbol, c["name"], slot=slot, price=c.get("price", 0.0),
+                           pct=c["pct"], ev=c["eval"], news=news)
             status[f"pushed_{slot}"][symbol] = c["score"]
             logger.info("✓ 推播 %s: %s", slot, symbol)
             if slot == "1400":

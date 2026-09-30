@@ -31,6 +31,7 @@ except ImportError:
     print("pip install requests")
     sys.exit(1)
 
+import journal
 from news_check import check_news, format_news_block
 
 logging.basicConfig(
@@ -335,7 +336,7 @@ def main():
         if not fresh:
             continue
 
-        news_block = ""
+        news_block, result = "", None
         if sym not in NO_NEWS_CHECK:
             result = check_news(sym, snap["name"])
             news_block = format_news_block(result, pct)
@@ -343,7 +344,10 @@ def main():
                 logger.info("  ↳ [NEWS] %s: %s（相關 %d／%d 則）", sym, result["verdict"],
                             result.get("n_relevant", 0), result.get("n_news", 0))
 
-        send_telegram(format_alert(snap, fresh, pct, news_block))
+        if send_telegram(format_alert(snap, fresh, pct, news_block)):
+            journal.record("monitor", sym, snap["name"], slot=datetime.now(TZ).strftime("%H:%M"),
+                           price=snap["price"], pct=pct, news=result,
+                           alerts=",".join(ev["type"] for ev in fresh))
         alert_count += 1
 
     new_state["_cooldowns"] = {k: v for k, v in cooldowns.items() if now_ts - v < 86400}
