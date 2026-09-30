@@ -353,3 +353,41 @@ def test_rule_projects_intraday_volume():
     ev = stock_screener.evaluate_signal(_bars([100] * 20 + [104], [1000] * 20 + [1000], today),
                                         datetime(2026, 9, 30, 10, 0, tzinfo=TZ))
     assert ev["projected"] and ev["vol_ratio"] == 4.5 and ev["qualified"]
+
+
+# ── 群創 3481（2026-09-30 漲停）實例 ────────────────────────────────
+def test_rule_limit_up_day_still_counts_as_low_base():
+    # 20 日低點 100、昨收 106.3（離低點 +6.3%）、今天漲停 +9.95%、量比 2.49
+    closes = [100] * 10 + [103, 104, 102, 105, 104, 103, 105, 106, 105, 106.3, 116.88]
+    vols = [1000] * 20 + [2490]
+    ev = stock_screener.evaluate_signal(_bars(closes, vols), AFTER_CLOSE)
+    assert ev["breakout"] and ev["near_low"] and not ev["strong_vol"]
+    assert ev["rise_from_low"] == 6.3
+    assert ev["score"] == 2 and ev["qualified"]
+
+
+def _ans(direction, impact, rumor, rel=0.95):
+    d = {"positive": 0.05, "negative": 0.05, "mixed": 0.05, "neutral": 0.05}
+    d[direction] = 0.85
+    return {
+        "about_company": {"noul": rel},
+        "direction": {"choice": direction, "probabilities": d, "confidence": 0.8},
+        "impact": {"score": impact, "confidence": 0.6},
+        "persistence": {"choice": "short_term", "probabilities": {"short_term": 1.0}},
+        "event_type": {"choice": "pricing_supply"},
+        "unconfirmed": {"noul": 0.9 if rumor else 0.05},
+    }
+
+
+def test_news_rumor_driven_verdict():
+    now = datetime.now(TZ)
+    pub = (now - timedelta(hours=3)).isoformat()
+    items = [
+        {"title": "友達群創漲停原因？輝達點名玻璃基板", "published": pub, "answers": _ans("positive", 1.6, True)},
+        {"title": "群創亮燈漲停，延續面板與新應用題材買氣", "published": pub, "answers": _ans("positive", 0.2, False)},
+        {"title": "2大金主狂掃10.62萬張 群創爆量飆漲停", "published": pub, "answers": _ans("neutral", 0.1, False)},
+    ]
+    r = news_check.summarize(items, now)
+    assert r["verdict"] == "rumor_driven"
+    block = news_check.format_news_block(r, pct=9.95)
+    assert "題材或傳聞帶動" in block and "上漲缺乏證實消息支撐" in block

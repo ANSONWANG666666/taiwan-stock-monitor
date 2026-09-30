@@ -11,6 +11,7 @@ Jev 新聞查證模組
   confirmed_negative  有證實的利空消息
   neutral             有相關新聞，但沒有明確方向
   rumor_only          只有傳聞、未證實消息
+  rumor_driven        有證實新聞但沒有方向，主要訊息來自傳聞或題材
   none                查無相關新聞
   error               查證失敗（不影響原本的推播）
 
@@ -183,6 +184,8 @@ def summarize(items: list, now: Optional[datetime] = None) -> dict:
         verdict = "confirmed_positive"
     elif net_conf <= -NET_THRESHOLD:
         verdict = "confirmed_negative"
+    elif abs(net_all - net_conf) >= NET_THRESHOLD:
+        verdict = "rumor_driven"      # 證實消息沒有方向，方向感來自傳聞／題材
     else:
         verdict = "neutral"
     top = sorted(scored, key=lambda s: abs(s["score"]), reverse=True)[:3]
@@ -244,6 +247,7 @@ def format_news_block(result: Optional[dict], pct: Optional[float] = None) -> st
         "confirmed_negative": "🔻 有證實的利空消息",
         "neutral": "➖ 有相關新聞，但沒有明確方向",
         "rumor_only": "⚠️ 只有傳聞、尚未證實",
+        "rumor_driven": "⚠️ 主要是題材或傳聞帶動，證實消息沒有明確方向",
         "none": f"⚠️ 近 {LOOKBACK_HOURS} 小時查無相關新聞，異動原因不明",
         "error": "（新聞查證暫時無法使用）",
     }[v]
@@ -252,7 +256,7 @@ def format_news_block(result: Optional[dict], pct: Optional[float] = None) -> st
     if pct is not None:
         if pct > 0 and v == "confirmed_negative":
             lines.append("❗ 股價上漲但新聞偏利空，留意是否為出貨")
-        elif pct > 0 and v in ("none", "rumor_only"):
+        elif pct > 0 and v in ("none", "rumor_only", "rumor_driven"):
             lines.append("❗ 上漲缺乏證實消息支撐，留意純籌碼或喊單")
         elif pct < 0 and v == "confirmed_positive":
             lines.append("❗ 有利多但股價下跌，可能利多已反映或另有利空")
