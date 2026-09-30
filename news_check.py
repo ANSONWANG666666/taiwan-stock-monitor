@@ -192,14 +192,14 @@ def summarize(items: list, now: Optional[datetime] = None) -> dict:
 
 
 # ── 對外介面 ─────────────────────────────────────────────────────────
-def check_news(symbol: str, name: str, transport=None) -> Optional[dict]:
+def check_news(symbol: str, name: str, transport=None, use_symbol_cache: bool = True) -> Optional[dict]:
     """回傳結論 dict；未設定 API key 時回傳 None。任何錯誤都不會丟出例外。"""
     api_key = os.environ.get("TYPESAFE_API_KEY", "").strip()
     if not api_key:
         return None
     cache = _load_cache()
     sym_hit = cache.get("symbols", {}).get(symbol)
-    if sym_hit and time.time() - sym_hit.get("ts", 0) < SYMBOL_TTL_MIN * 60:
+    if use_symbol_cache and sym_hit and time.time() - sym_hit.get("ts", 0) < SYMBOL_TTL_MIN * 60:
         return sym_hit["result"]
     try:
         stock = {"ticker": symbol, "name": name or symbol}
@@ -218,6 +218,10 @@ def check_news(symbol: str, name: str, transport=None) -> Optional[dict]:
                     cache["items"][_item_key(symbol, it["title"])] = {"answers": it["answers"], "ts": time.time()}
         result = summarize(items)
         result["jev_calls"] = len(todo)
+        errs = [it["error"] for it in todo if it.get("error")]
+        if errs:
+            result["errors"] = errs[:3]
+            logger.warning("Jev 呼叫失敗 %d／%d 則：%s", len(errs), len(todo), errs[0])
     except Exception as e:  # 查證失敗不影響原推播
         logger.warning("新聞查證失敗 %s: %s", symbol, str(e)[:120])
         result = {"verdict": "error", "net": 0.0, "top": [], "n_news": 0, "n_relevant": 0,

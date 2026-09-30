@@ -140,7 +140,7 @@ def env(tmp_path, monkeypatch):
         monkeypatch.setattr(mod, "CHAT_ID", "c")
     monkeypatch.setenv("TYPESAFE_API_KEY", "test-key")
     real_check = news_check.check_news
-    wrapped = lambda s, n, transport=None: real_check(s, n, transport=rec.jev)
+    wrapped = lambda s, n, transport=None, **kw: real_check(s, n, transport=rec.jev, **kw)
     monkeypatch.setattr(stock_check_once, "check_news", wrapped)
     monkeypatch.setattr(stock_screener, "check_news", wrapped)
     return rec
@@ -273,3 +273,33 @@ def test_news_summarize_rules():
     block = news_check.format_news_block({"verdict": "confirmed_negative", "top": []}, pct=2.0)
     assert "留意是否為出貨" in block
     assert news_check.format_news_block(None) == ""
+
+
+# ── 測試開關 ─────────────────────────────────────────────────────────
+def test_test_symbol_forces_push(env, monkeypatch):
+    env.mis = [mis_item("2330", "台積電", 1000, 1010, tv=1, v=20000)]   # 下跌、評分低
+    monkeypatch.setenv("TEST_SYMBOL", "2330")
+    with pytest.raises(SystemExit) as e:
+        stock_screener.main()
+    assert e.value.code == 0
+    assert len(env.sent) == 1
+    msg = env.sent[0]
+    assert msg.startswith("🧪") and "不是真實訊號" in msg and "正式入選" not in msg
+    assert "台積電（2330）" in msg and "🟢 -0.99%" in msg
+    assert "有證實的利多消息" in msg
+    assert "Jev 呼叫 2 次" in msg and "結論 confirmed_positive" in msg
+    assert not Path("screener_status.json").exists()               # 不寫入正式推播紀錄
+
+    # 再測一次：不走 30 分鐘的股票快取，但新聞判斷走快取、不重複呼叫 Jev
+    with pytest.raises(SystemExit):
+        stock_screener.main()
+    assert len(env.sent) == 2 and env.jev.calls == 2
+
+
+def test_test_symbol_without_key(env, monkeypatch):
+    monkeypatch.delenv("TYPESAFE_API_KEY")
+    env.mis = [mis_item("2330", "台積電", 1000, 1010, tv=1, v=20000)]
+    monkeypatch.setenv("TEST_SYMBOL", "2330")
+    with pytest.raises(SystemExit):
+        stock_screener.main()
+    assert "未設定 TYPESAFE_API_KEY" in env.sent[0]

@@ -284,6 +284,7 @@ SLOT_HEADER = {
     "0930": ("🔍", "監察清單｜低置信度", "<i>早盤出現強勢異動，僅供觀察，尚未收盤確認</i>"),
     "1300": ("📌", "中場更新｜中置信度", "<i>仍維持強勢，等待收盤確認</i>"),
     "1400": ("✅", "正式入選｜高置信度", "📊 收盤資料確認符合條件，可列入正式觀察清單"),
+    "test": ("🧪", "測試推播｜不是真實訊號", "<i>手動測試：不論評分高低都會推播，也不寫入推播紀錄</i>"),
 }
 
 
@@ -319,8 +320,57 @@ def current_slot(t: datetime) -> Optional[str]:
     return None
 
 
+# ── 測試模式：強制推播一檔股票（不寫入推播狀態）───────────────────
+def run_test(symbol: str) -> int:
+    """手動執行時指定 TEST_SYMBOL，強制推播該股票並實際呼叫 Jev 查新聞。"""
+    logger.info("=== 測試模式：強制推播 %s ===", symbol)
+    live_raw = fetch_stocks_from_twse([symbol]).get(symbol, {})
+    name = live_raw.get("n", "") or symbol
+    live = parse_live(live_raw) or {}
+    prev = live.get("prev") or 0
+    pct = (live["close"] - prev) / prev * 100 if live and prev else 0.0
+    if not live_raw:
+        logger.warning("%s：TWSE 即時資料取不到（上櫃股票目前不支援），漲跌幅以 0 顯示", symbol)
+
+    cache = load_json(CACHE_FILE, {})
+    klines = cache.get(symbol, {}).get("klines", [])
+    if len(klines) < 5:
+        today = now_tw().date()
+        prev_m = today.replace(day=1) - timedelta(days=1)
+        for y, m in ((prev_m.year, prev_m.month), (today.year, today.month)):
+            klines += fetch_month_daily(symbol, y, m)
+            time.sleep(0.6)
+        klines = sorted({k["date"]: k for k in klines}.values(), key=lambda k: k["date"])
+        logger.info("%s：臨時抓取日K %d 根（不寫入快取）", symbol, len(klines))
+    ev = evaluate_signal(klines) if klines else {
+        "score": 0, "consecutive_gain": 0, "volume_ratio": 0.0, "uptrend": False,
+        "date": now_tw().strftime("%Y-%m-%d %H:%M")}
+
+    result = check_news(symbol, name, use_symbol_cache=False)
+    if result is None:
+        diag = "⚙️ 未設定 TYPESAFE_API_KEY，沒有做新聞查證"
+    else:
+        diag = (f"⚙️ 診斷：Jev 呼叫 {result.get('jev_calls', 0)} 次・新聞 {result.get('n_news', 0)} 則"
+                f"・相關 {result.get('n_relevant', 0)} 則・結論 {result['verdict']}")
+        if result.get("message"):
+            diag += f"\n⚙️ 錯誤：{html.escape(result['message'])}"
+        if result.get("errors"):
+            diag += f"\n⚙️ Jev 錯誤：{html.escape(result['errors'][0])}"
+    logger.info(diag.replace("⚙️ ", ""))
+
+    msg = (format_signal("test", symbol, name, ev, pct, format_news_block(result, pct))
+           + "\n\n" + diag)
+    ok = send_telegram(msg)
+    logger.info("Telegram 推播%s", "成功" if ok else "失敗")
+    return 0 if ok else 1
+
+
 # ── 主程式 ──────────────────────────────────────────────────────
 def main():
+    test_symbol = os.environ.get("TEST_SYMBOL", "").strip()
+    if test_symbol:
+        sys.exit(run_test(test_symbol))
+
     t = now_tw()
     slot = os.environ.get("SCREENER_SLOT") or current_slot(t)   # SCREENER_SLOT 可手動指定（測試用）
     logger.info("=== 四訊號選股 %s（台灣時間 %s）===", slot or "非推播時段", t.strftime("%Y-%m-%d %H:%M"))
