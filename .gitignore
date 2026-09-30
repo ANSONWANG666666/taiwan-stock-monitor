@@ -6,3 +6,5 @@ stock_state.json
 screener_kline_cache.json
 screener_status.json
 jev_news_cache.json
+market_cache.json
+market_scan_state.json

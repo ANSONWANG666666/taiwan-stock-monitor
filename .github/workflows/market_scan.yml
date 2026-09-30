@@ -1,0 +1,61 @@
+name: 台股全市場掃描
+
+on:
+  schedule:
+    # 15:05 台灣時間（UTC 07:05）收盤資料通常已公布
+    - cron: '5 7 * * 1-5'
+    # 16:35 台灣時間（UTC 08:35）補跑：資料晚公布或排程延遲時；已推播過會自動略過
+    - cron: '35 8 * * 1-5'
+  workflow_dispatch:
+    inputs:
+      scan_date:
+        description: '掃描日期 YYYYMMDD（留空為今天）'
+        required: false
+        default: ''
+      force:
+        description: '同一天已推播過仍重新推播（填 1）'
+        required: false
+        default: ''
+
+concurrency:
+  group: market-scan
+  cancel-in-progress: false
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout 程式碼
+        uses: actions/checkout@v4
+
+      - name: 設定 Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: 安裝套件
+        run: pip install -r requirements.txt
+
+      - name: 讀取全市場日K快取
+        uses: actions/cache@v4
+        with:
+          path: |
+            market_cache.json
+            market_scan_state.json
+            jev_news_cache.json
+          key: market-scan-${{ github.run_id }}
+          restore-keys: |
+            market-scan-
+
+      - name: 執行全市場掃描
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID:   ${{ secrets.TELEGRAM_CHAT_ID }}
+          TYPESAFE_API_KEY:   ${{ secrets.TYPESAFE_API_KEY }}
+          SCAN_DATE:          ${{ github.event.inputs.scan_date }}
+          FORCE_SCAN:         ${{ github.event.inputs.force }}
+          MAX_DETAIL:         '10'
+        run: python market_scan.py
