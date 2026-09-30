@@ -224,7 +224,7 @@ def update_today_bar(cache: Dict, twse_data: Dict):
 # 加分（0–3 分，>= PUSH_SCORE 才推播）：
 #   突破      收盤 > 前 20 日最高收盤
 #   強量      量比 >= STRONG_VOL
-#   低檔起漲  收盤距前 20 日最低收盤 <= NEAR_LOW_PCT（盤整後剛發動，不是漲一大段後）
+#   低檔起漲  昨收距前 20 日最低收盤 <= NEAR_LOW_PCT（發動前還在低檔整理，不是漲一大段後）
 VOL_RATIO_MIN = float(os.environ.get("VOL_RATIO_MIN", "2.0"))
 PCT_MIN       = float(os.environ.get("PCT_MIN", "1.0"))
 MAX_STREAK    = int(os.environ.get("MAX_STREAK", "5"))
@@ -273,7 +273,8 @@ def evaluate_signal(klines: List[dict], now: Optional[datetime] = None) -> Dict:
     pct = (close - prev_close) / prev_close * 100 if prev_close else 0.0
     high20 = max(k["close"] for k in base)
     low20 = min(k["close"] for k in base)
-    rise_from_low = (close / low20 - 1) * 100 if low20 else 0.0
+    # 起漲位置看「今天發動前」：用昨收算，否則漲停當天自己的漲幅會把低檔起漲判掉
+    rise_from_low = (prev_close / low20 - 1) * 100 if low20 else 0.0
     streak = up_streak(klines)
 
     breakout = close > high20
@@ -340,7 +341,7 @@ def format_signal(slot: str, symbol: str, name: str, s: Dict, pct: float, news_b
         f"📊 起漲評分: {s['score']}/3{gate}\n"
         f"  {ok(s['breakout'])} 突破前 20 日高點\n"
         f"  {ok(s['strong_vol'])} 強量（量比 ≥ {STRONG_VOL:g}）\n"
-        f"  {ok(s['near_low'])} 低檔起漲（距 20 日低點 +{s['rise_from_low']}%）\n"
+        f"  {ok(s['near_low'])} 低檔起漲（發動前距 20 日低點 +{s['rise_from_low']}%）\n"
         f"  連漲 {s['streak']} 天\n"
         f"🕐 {s['date']}\n"
         f"🔗 <a href='https://tw.stock.yahoo.com/quote/{symbol}'>查看行情</a>"
