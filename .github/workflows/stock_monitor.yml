@@ -7,9 +7,15 @@ on:
     - cron: '*/5 1-5 * * 1-5'
   workflow_dispatch:   # 允許手動觸發（測試用）
 
+# 上一輪還沒跑完時，不要同時跑兩輪（避免狀態檔互相覆蓋）
+concurrency:
+  group: stock-monitor
+  cancel-in-progress: false
+
 jobs:
   monitor:
     runs-on: ubuntu-latest
+    timeout-minutes: 8
 
     steps:
       - name: Checkout 程式碼
@@ -19,14 +25,17 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
+          cache: 'pip'
 
       - name: 安裝套件
-        run: pip install requests
+        run: pip install -r requirements.txt
 
       - name: 讀取上次狀態快取
         uses: actions/cache@v4
         with:
-          path: stock_state.json
+          path: |
+            stock_state.json
+            jev_news_cache.json
           key: stock-state-${{ github.run_id }}
           restore-keys: |
             stock-state-
@@ -35,8 +44,8 @@ jobs:
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID:   ${{ secrets.TELEGRAM_CHAT_ID }}
-          LARGE_TRADE_THRESHOLD: '500'
-          LARGE_BID_THRESHOLD:   '1000'
-          VOLUME_SPIKE_RATIO:    '3.0'
-          VOLUME_SPIKE_MIN:      '200'
+          TYPESAFE_API_KEY:   ${{ secrets.TYPESAFE_API_KEY }}   # 未設定時不做新聞查證
+          LARGE_BID_THRESHOLD: '1000'
+          VOLUME_SPIKE_RATIO:  '3.0'
+          VOLUME_SPIKE_MIN:    '200'
         run: python stock_check_once.py
