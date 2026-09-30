@@ -178,17 +178,19 @@ def summarize(items: list, now: Optional[datetime] = None) -> dict:
     confirmed = [s for s in scored if not s["rumor"]]
     net_conf = sum(s["score"] for s in confirmed)
     net_all = sum(s["score"] for s in scored)
+    top = sorted(scored, key=lambda s: abs(s["score"]), reverse=True)[:3]
+    lead = top[0]
+    lead_has_direction = lead["answers"]["direction"]["choice"] in ("positive", "negative")
     if not confirmed:
         verdict = "rumor_only"
     elif net_conf >= NET_THRESHOLD:
         verdict = "confirmed_positive"
     elif net_conf <= -NET_THRESHOLD:
         verdict = "confirmed_negative"
-    elif abs(net_all - net_conf) >= NET_THRESHOLD:
-        verdict = "rumor_driven"      # 證實消息沒有方向，方向感來自傳聞／題材
+    elif lead["rumor"] and lead_has_direction:
+        verdict = "rumor_driven"      # 證實消息沒有方向，分數最高的是有方向的傳聞／題材
     else:
         verdict = "neutral"
-    top = sorted(scored, key=lambda s: abs(s["score"]), reverse=True)[:3]
     low_conf = any(s["answers"]["direction"]["confidence"] < LOW_CONF for s in top[:1])
     return {"verdict": verdict, "net": net_all, "top": top, "low_conf": low_conf,
             "n_news": len(items), "n_relevant": len(scored)}

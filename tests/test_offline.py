@@ -391,3 +391,28 @@ def test_news_rumor_driven_verdict():
     assert r["verdict"] == "rumor_driven"
     block = news_check.format_news_block(r, pct=9.95)
     assert "題材或傳聞帶動" in block and "上漲缺乏證實消息支撐" in block
+
+
+def test_news_rumor_driven_real_shape():
+    # 9/30 群創實際情況：8 則相關新聞，唯一有內容的是早上的傳聞，
+    # 且事件類型被歸為市場評論（降權），晚上再算時間衰減後分數很小
+    now = datetime.now(TZ)
+    pub = (now - timedelta(hours=9)).isoformat()
+    rumor = _ans("positive", 1.6, True)
+    rumor["event_type"]["choice"] = "analyst_market_view"
+    items = [{"title": "輝達點名玻璃基板", "published": pub, "answers": rumor}]
+    items += [{"title": f"群創漲停報導{i}", "published": pub, "answers": _ans("neutral", 0.1, False)}
+              for i in range(5)]
+    items += [{"title": "群創亮燈漲停", "published": pub, "answers": _ans("positive", 0.2, False)},
+              {"title": "群創爆量", "published": pub, "answers": _ans("neutral", 0.1, False)}]
+    r = news_check.summarize(items, now)
+    assert r["verdict"] == "rumor_driven"
+    assert r["top"][0]["title"] == "輝達點名玻璃基板"
+
+
+def test_news_neutral_when_lead_is_confirmed():
+    now = datetime.now(TZ)
+    pub = (now - timedelta(hours=2)).isoformat()
+    items = [{"title": "法說會日期公告", "published": pub, "answers": _ans("neutral", 0.5, False)},
+             {"title": "傳小道消息", "published": pub, "answers": _ans("neutral", 0.2, True)}]
+    assert news_check.summarize(items, now)["verdict"] == "neutral"
