@@ -135,6 +135,8 @@ def env(tmp_path, monkeypatch):
     monkeypatch.setattr("requests.post", fake_post)
     monkeypatch.setattr("requests.Session", FakeSession)
     monkeypatch.setattr("time.sleep", lambda s: None)
+    frozen = datetime.now(TZ).replace(hour=14, minute=30, second=0, microsecond=0)
+    monkeypatch.setattr(stock_screener, "now_tw", lambda: frozen)
     for mod in (stock_check_once, stock_screener):
         monkeypatch.setattr(mod, "TOKEN", "t")
         monkeypatch.setattr(mod, "CHAT_ID", "c")
@@ -147,21 +149,17 @@ def env(tmp_path, monkeypatch):
 
 
 def stock_day(symbol, yyyymm01):
-    """前 20 天平盤小量，最後 5 天連漲且量放大（到昨天為止）"""
+    """到昨天為止約 28 個交易日的平盤：收盤 1000、每天 2 萬張（今天的起漲由即時資料提供）"""
     y, m = int(yyyymm01[:4]), int(yyyymm01[4:6])
     today = datetime.now(TZ).date()
     days = [today - timedelta(days=i) for i in range(40, 0, -1)]
     days = [d for d in days if d.weekday() < 5]
     rows = []
-    for idx, d in enumerate(days):
+    for d in days:
         if (d.year, d.month) != (y, m):
             continue
-        n_left = len(days) - idx
-        up = symbol in ("2330", "2454") and n_left <= 5
-        close = 1000 + (6 - n_left) * 10 if up else 1000
-        vol = 60_000_000 if up else 20_000_000
-        rows.append([f"{d.year - 1911}/{d.month:02d}/{d.day:02d}", f"{vol:,}", "0", "0", "0", "0",
-                     f"{close:,.2f}", "0", "0"])
+        rows.append([f"{d.year - 1911}/{d.month:02d}/{d.day:02d}", "20,000,000", "0", "0", "0", "0",
+                     "1,000.00", "0", "0"])
     return {"stat": "OK", "fields": ["日期", "成交股數", "成交金額", "開盤價", "最高價", "最低價",
                                       "收盤價", "漲跌價差", "成交筆數"], "data": rows}
 
@@ -236,9 +234,9 @@ def test_slot_uses_taiwan_time():
 
 def test_screener_full_flow(env, monkeypatch):
     env.mis = [mis_item(s, n, p, pv, tv=1, v=v) for s, n, p, pv, v in [
-        ("2330", "台積電", 1060, 1050, 70000),
-        ("2454", "聯發科", 1060, 1050, 70000),
-        ("2317", "鴻海", 1000, 1000, 20000),
+        ("2330", "台積電", 1030, 1000, 70000),   # +3%、量比 3.5、突破、低檔 → 3 分
+        ("2454", "聯發科", 1030, 1000, 70000),
+        ("2317", "鴻海", 1000, 1000, 20000),     # 平盤 → 未達必要條件
     ]]
     monkeypatch.setenv("SCREENER_SLOT", "1400")
     stock_screener.main()
@@ -303,3 +301,55 @@ def test_test_symbol_without_key(env, monkeypatch):
     with pytest.raises(SystemExit):
         stock_screener.main()
     assert "未設定 TYPESAFE_API_KEY" in env.sent[0]
+
+
+# ── 起漲規則 ─────────────────────────────────────────────────────────
+def _bars(closes, vols, today_date=None):
+    start = datetime(2026, 8, 1)
+    bars = [{"date": (start + timedelta(days=i)).strftime("%Y-%m-%d"), "close": c, "volume": v}
+            for i, (c, v) in enumerate(zip(closes, vols))]
+    if today_date:
+        bars[-1]["date"] = today_date
+    return bars
+
+
+AFTER_CLOSE = datetime(2026, 9, 30, 14, 30, tzinfo=TZ)
+
+
+def test_rule_box_breakout_scores_3():
+    ev = stock_screener.evaluate_signal(_bars([100] * 20 + [104], [1000] * 20 + [3500]), AFTER_CLOSE)
+    assert ev["qualified"] and ev["score"] == 3
+    assert ev["breakout"] and ev["strong_vol"] and ev["near_low"]
+
+
+def test_rule_needs_volume():
+    ev = stock_screener.evaluate_signal(_bars([100] * 20 + [104], [1000] * 20 + [1500]), AFTER_CLOSE)
+    assert not ev["gate"] and not ev["qualified"] and "量比" in ev["reason"]
+
+
+def test_rule_old_bug_streak_without_volume_no_longer_passes():
+    # 舊版：連漲 4 天就直接 2 分。新版：沒有量就不算
+    closes = [100] * 16 + [101, 102, 103, 104, 105]
+    ev = stock_screener.evaluate_signal(_bars(closes, [1000] * 21), AFTER_CLOSE)
+    assert not ev["qualified"]
+
+
+def test_rule_rejects_extended_run():
+    closes = [100] * 14 + [105, 110, 115, 120, 125, 130, 136]     # 已連漲 7 天、離低點 +36%
+    ev = stock_screener.evaluate_signal(_bars(closes, [1000] * 20 + [4000]), AFTER_CLOSE)
+    assert not ev["qualified"] and "已連漲" in ev["reason"]
+
+
+def test_rule_high_up_without_breakout_needs_two_points():
+    # 大量上漲但沒突破、也不在低檔（前面已經漲過又回檔）→ 只有強量 1 分，不推播
+    closes = [100] * 5 + [130] * 5 + [120] * 10 + [124]
+    ev = stock_screener.evaluate_signal(_bars(closes, [1000] * 20 + [3500]), AFTER_CLOSE)
+    assert ev["gate"] and ev["score"] == 1 and not ev["qualified"]
+
+
+def test_rule_projects_intraday_volume():
+    today = "2026-09-30"
+    # 10:00 已過 60/270 分鐘；累計 1000 張 → 預估全日 4500 張 → 量比 4.5
+    ev = stock_screener.evaluate_signal(_bars([100] * 20 + [104], [1000] * 20 + [1000], today),
+                                        datetime(2026, 9, 30, 10, 0, tzinfo=TZ))
+    assert ev["projected"] and ev["vol_ratio"] == 4.5 and ev["qualified"]
