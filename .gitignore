@@ -1,0 +1,8 @@
+__pycache__/
+*.pyc
+.env
+*.env
+stock_state.json
+screener_kline_cache.json
+screener_status.json
+jev_news_cache.json

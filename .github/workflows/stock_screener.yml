@@ -9,10 +9,20 @@ on:
     # 14:00 收盤確認 (UTC 06:00 = 台灣時間 14:00)
     - cron: '0 6 * * 1-5'
   workflow_dispatch:   # 允許手動觸發（測試用）
+    inputs:
+      slot:
+        description: '指定時段（0930 / 1300 / 1400），留空則依台灣時間自動判斷'
+        required: false
+        default: ''
+
+concurrency:
+  group: stock-screener
+  cancel-in-progress: false
 
 jobs:
   screener:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
 
     steps:
       - name: Checkout 程式碼
@@ -22,12 +32,27 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
+          cache: 'pip'
 
       - name: 安裝套件
-        run: pip install requests
+        run: pip install -r requirements.txt
+
+      # 原本沒有保存快取，每次執行都從零開始 → 永遠資料不足
+      - name: 讀取日K快取與推播狀態
+        uses: actions/cache@v4
+        with:
+          path: |
+            screener_kline_cache.json
+            screener_status.json
+            jev_news_cache.json
+          key: screener-state-${{ github.run_id }}
+          restore-keys: |
+            screener-state-
 
       - name: 執行四訊號選股
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID:   ${{ secrets.TELEGRAM_CHAT_ID }}
+          TYPESAFE_API_KEY:   ${{ secrets.TYPESAFE_API_KEY }}   # 未設定時不做新聞查證
+          SCREENER_SLOT:      ${{ github.event.inputs.slot }}
         run: python stock_screener.py
