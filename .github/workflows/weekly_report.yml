@@ -1,0 +1,41 @@
+name: 台股訊號成效週報
+
+on:
+  schedule:
+    # 每週五 17:05 台灣時間（UTC 09:05），在全市場掃描回填報酬之後
+    - cron: '5 9 * * 5'
+  workflow_dispatch:   # 可隨時手動執行
+
+permissions:
+  contents: read
+
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout 程式碼
+        uses: actions/checkout@v4
+
+      - name: Checkout 訊號紀錄簿（journal 分支）
+        uses: actions/checkout@v4
+        with:
+          ref: journal
+          path: journal-data
+
+      - name: 設定 Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: 安裝套件
+        run: pip install -r requirements.txt
+
+      - name: 產生並推播週報
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID:   ${{ secrets.TELEGRAM_CHAT_ID }}
+          JOURNAL_DIR:        journal-data
+        run: python weekly_report.py
