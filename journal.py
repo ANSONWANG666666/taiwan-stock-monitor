@@ -37,6 +37,7 @@ FIELDS = [
     "alerts",
     "news_verdict", "news_net", "news_n_relevant", "news_top", "news_top_rumor",
     "ret_5d", "ret_20d", "idx_5d", "idx_20d", "excess_5d", "excess_20d",
+    "industry",   # 新欄位一律加在最後，舊 CSV 才能繼續附加
 ]
 HORIZONS = (5, 20)
 
@@ -71,7 +72,7 @@ def _ev_fields(ev: Optional[dict]) -> dict:
 
 def record(source: str, code: str, name: str, *, slot: str = "", price: float = 0.0,
            pct: float = 0.0, ev: Optional[dict] = None, alerts: str = "",
-           news: Optional[dict] = None, date: Optional[str] = None):
+           news: Optional[dict] = None, date: Optional[str] = None, industry: str = ""):
     """寫一筆訊號紀錄；任何錯誤都不會影響推播"""
     d = journal_dir()
     if not d.is_dir():
@@ -81,7 +82,7 @@ def record(source: str, code: str, name: str, *, slot: str = "", price: float = 
         row = {"ts": now.isoformat(timespec="seconds"), "date": date or now.strftime("%Y-%m-%d"),
                "source": source, "slot": slot, "code": code, "name": name,
                "price": f"{price:.2f}" if price else "", "pct": f"{pct:.2f}",
-               "alerts": alerts, **_ev_fields(ev), **_news_fields(news)}
+               "alerts": alerts, "industry": industry, **_ev_fields(ev), **_news_fields(news)}
         path = d / f"signals_{source}.csv"
         new = not path.exists()
         with path.open("a", encoding="utf-8-sig" if new else "utf-8", newline="") as f:

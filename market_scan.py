@@ -131,6 +131,70 @@ def fetch_market_day(date_str: str) -> Optional[Dict[str, dict]]:
     return out or None
 
 
+# ── 產業別（族群統計用）────────────────────────────────────────────
+# TWSE 上市公司基本資料的「產業別」是代碼，這裡轉成簡短名稱
+INDUSTRY_NAMES = {
+    "01": "水泥", "02": "食品", "03": "塑膠", "04": "紡織", "05": "電機機械", "06": "電器電纜",
+    "08": "玻璃陶瓷", "09": "造紙", "10": "鋼鐵", "11": "橡膠", "12": "汽車", "14": "建材營造",
+    "15": "航運", "16": "觀光餐旅", "17": "金融保險", "18": "貿易百貨", "19": "綜合", "20": "其他",
+    "21": "化學", "22": "生技醫療", "23": "油電燃氣", "24": "半導體", "25": "電腦週邊",
+    "26": "光電", "27": "通信網路", "28": "電子零組件", "29": "電子通路", "30": "資訊服務",
+    "31": "其他電子", "32": "文化創意", "33": "農業科技", "34": "電子商務", "35": "綠能環保",
+    "36": "數位雲端", "37": "運動休閒", "38": "居家生活", "91": "存託憑證",
+}
+INDUSTRY_REFRESH_DAYS = 7
+SECTOR_TOP = 6               # 摘要列出幾個族群
+
+
+def fetch_industry_map() -> Dict[str, str]:
+    """{股票代號: 產業名稱}；取不到回傳空 dict（族群統計就略過，不影響掃描）"""
+    url = "https://openapi.twse.com.tw/v1/opendata/t187ap03_L"
+    try:
+        r = requests.get(url, headers=HEADERS, timeout=30)
+        r.raise_for_status()
+        data = r.json()
+    except Exception as e:
+        logger.warning("產業別資料取得失敗：%s", str(e)[:80])
+        return {}
+    out = {}
+    for row in data if isinstance(data, list) else []:
+        code = str(row.get("公司代號", "")).strip()
+        ind = str(row.get("產業別", "")).strip()
+        if code and ind:
+            out[code] = INDUSTRY_NAMES.get(ind.zfill(2) if ind.isdigit() else ind,
+                                           ind if not ind.isdigit() else f"其他({ind})")
+    logger.info("產業別資料 %d 檔", len(out))
+    return out
+
+
+def get_industry_map(cache: dict, today_iso: str) -> Dict[str, str]:
+    """每 7 天更新一次，存在全市場快取裡"""
+    last = cache.get("industry_date", "")
+    stale = not last or (datetime.fromisoformat(today_iso) - datetime.fromisoformat(last)).days >= INDUSTRY_REFRESH_DAYS
+    if stale or not cache.get("industry"):
+        fresh = fetch_industry_map()
+        if fresh:
+            cache["industry"], cache["industry_date"] = fresh, today_iso
+    return cache.get("industry", {})
+
+
+def sector_stats(hits: List[dict], today: Dict[str, dict], industry: Dict[str, str]) -> List[tuple]:
+    """回傳 [(族群, 符合檔數, 該族群流動性合格檔數)]，依符合檔數、占比排序"""
+    if not industry:
+        return []
+    liquid, hit = {}, {}
+    for code, d in today.items():
+        if is_common_stock(code) and d["amount"] >= MIN_DAY_AMT:
+            g = industry.get(code, "未分類")
+            liquid[g] = liquid.get(g, 0) + 1
+    for h in hits:
+        g = industry.get(h["code"], "未分類")
+        hit[g] = hit.get(g, 0) + 1
+    rows = [(g, n, liquid.get(g, n)) for g, n in hit.items()]
+    rows.sort(key=lambda r: (r[1], r[1] / r[2]), reverse=True)
+    return rows
+
+
 # ── 快取 ─────────────────────────────────────────────────────────
 def load_json(path: Path, default):
     if path.exists():
@@ -202,7 +266,9 @@ def scan(cache: dict, date_iso: str, today: Dict[str, dict]) -> List[dict]:
     return hits
 
 
-def format_summary(date_iso: str, n_all: int, n_liquid: int, hits: List[dict], detail_n: int) -> str:
+def format_summary(date_iso: str, n_all: int, n_liquid: int, hits: List[dict], detail_n: int,
+                   sectors: Optional[List[tuple]] = None, industry: Optional[Dict[str, str]] = None) -> str:
+    industry = industry or {}
     lines = [f"📡 <b>全市場掃描｜{date_iso} 收盤</b>",
              f"上市普通股 {n_all:,} 檔 → 成交值 ≥ {MIN_DAY_AMT/1e8:g} 億 {n_liquid:,} 檔 → "
              f"<b>符合剛起漲 {len(hits)} 檔</b>"]
@@ -211,12 +277,25 @@ def format_summary(date_iso: str, n_all: int, n_liquid: int, hits: List[dict], d
         return "\n".join(lines)
     if detail_n:
         lines.append(f"前 {detail_n} 檔逐檔推播並附 Jev 新聞查證。")
+    if sectors:
+        multi = [s for s in sectors if s[1] >= 2][:SECTOR_TOP]
+        if multi:
+            lines.append("\n🏭 <b>族群</b>（符合檔數／該族群成交值合格檔數）")
+            lines.append("　".join(f"{html.escape(g)} {n}／{tot}" for g, n, tot in multi))
+            top = multi[0]
+            if top[1] >= 3 and top[1] / top[2] >= 0.2:
+                lines.append(f"👉 資金集中在<b>{html.escape(top[0])}</b>：合格股中 {top[1] / top[2]:.0%} 同步起漲")
+        singles = len([s for s in sectors if s[1] == 1])
+        if singles:
+            lines.append(f"<i>另有 {singles} 個族群各 1 檔</i>")
     rest = hits[detail_n:]
     if rest:
         lines.append("\n<b>其他符合條件（未查新聞）</b>")
         for h in rest[:SUMMARY_MAX]:
             e = h["ev"]
-            lines.append(f"• {html.escape(h['name'])} {h['code']}　{e['score']}/3　"
+            g = industry.get(h["code"])
+            tag = f"　{html.escape(g)}" if g else ""
+            lines.append(f"• {html.escape(h['name'])} {h['code']}{tag}　{e['score']}/3　"
                          f"🔴 +{e['pct']:.1f}%　量比 {e['vol_ratio']:.1f}x")
         if len(rest) > SUMMARY_MAX:
             lines.append(f"…另有 {len(rest) - SUMMARY_MAX} 檔（詳見 Actions log）")
@@ -252,6 +331,11 @@ def main():
 
     n_liquid = sum(1 for d in today.values() if d["amount"] >= MIN_DAY_AMT)
     hits = scan(cache, date_iso, today)
+    industry = get_industry_map(cache, date_iso)
+    save_json(CACHE_FILE, cache)
+    sectors = sector_stats(hits, today, industry)
+    if sectors:
+        logger.info("族群：%s", "、".join(f"{g} {n}/{t}" for g, n, t in sectors))
     logger.info("成交值合格 %d 檔，符合條件 %d 檔", n_liquid, len(hits))
     for h in hits:
         e = h["ev"]
@@ -260,7 +344,7 @@ def main():
                     e["breakout"], e["strong_vol"], e["near_low"], e["rise_from_low"])
 
     detail = hits[:MAX_DETAIL]
-    ok = send_telegram(format_summary(date_iso, n_all, n_liquid, hits, len(detail)))
+    ok = send_telegram(format_summary(date_iso, n_all, n_liquid, hits, len(detail), sectors, industry))
     results = {}
     for h in detail:
         result = check_news(h["code"], h["name"])
@@ -275,6 +359,7 @@ def main():
     if not already:   # 強制重跑不重複記錄
         for h in hits:   # 摘要裡未查新聞的也記錄（news_verdict = unchecked），方便比較
             journal.record("market", h["code"], h["name"], slot="close", date=date_iso,
+                           industry=industry.get(h["code"], ""),
                            price=today[h["code"]]["close"], pct=h["ev"]["pct"], ev=h["ev"],
                            news=results.get(h["code"]))
 
