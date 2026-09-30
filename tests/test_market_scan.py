@@ -127,3 +127,18 @@ def test_holiday_or_not_published(env, monkeypatch):
     monkeypatch.setenv("SCAN_DATE", "20260925")
     market_scan.main()
     assert sent == []
+
+
+def test_forum_posts_are_not_news(monkeypatch):
+    items = [("大眾控 - 準備大暴跌～加空 - 股市爆料同學會", "CMoney", 1),
+             ("大眾控亮燈漲停，綠能題材受關注", "Yahoo股市", 2)]
+    monkeypatch.setattr("requests.get", lambda *a, **k: Resp(rss(items)))
+    got = news_check.fetch_news("3701", "大眾控")
+    assert [g["title"] for g in got] == ["大眾控亮燈漲停，綠能題材受關注"]
+
+
+def test_summary_is_capped():
+    ev = {"score": 2, "pct": 3.0, "vol_ratio": 3.0}
+    hits = [{"code": f"{1000 + i}", "name": f"股{i}", "ev": ev} for i in range(120)]
+    msg = market_scan.format_summary("2026-09-30", 1087, 434, hits, 10)
+    assert "…另有 70 檔" in msg and len(msg) < 4096

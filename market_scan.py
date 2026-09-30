@@ -42,6 +42,7 @@ KEEP_BARS = 30              # 每檔保留的日K根數（評分需要 21 根）
 BOOTSTRAP_DAYS = 25         # 首次執行回補的交易日數
 MIN_DAY_AMT = int(os.environ.get("MIN_DAY_AMT", "50000000"))   # 當日成交值 < 5000 萬不看
 MAX_DETAIL = int(os.environ.get("MAX_DETAIL", "10"))
+SUMMARY_MAX = 40            # 摘要最多列幾檔（Telegram 單則上限 4096 字）
 REQUEST_GAP = 3.0           # TWSE 有頻率限制，每次請求間隔（秒）
 
 HEADERS = {
@@ -194,10 +195,12 @@ def format_summary(date_iso: str, n_all: int, n_liquid: int, hits: List[dict], d
     rest = hits[detail_n:]
     if rest:
         lines.append("\n<b>其他符合條件（未查新聞）</b>")
-        for h in rest:
+        for h in rest[:SUMMARY_MAX]:
             e = h["ev"]
             lines.append(f"• {html.escape(h['name'])} {h['code']}　{e['score']}/3　"
                          f"🔴 +{e['pct']:.1f}%　量比 {e['vol_ratio']:.1f}x")
+        if len(rest) > SUMMARY_MAX:
+            lines.append(f"…另有 {len(rest) - SUMMARY_MAX} 檔（詳見 Actions log）")
     return "\n".join(lines)
 
 
