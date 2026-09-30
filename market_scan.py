@@ -28,6 +28,7 @@ from zoneinfo import ZoneInfo
 
 import requests
 
+import journal
 from news_check import check_news, format_news_block
 from stock_screener import evaluate_signal, format_signal, send_telegram
 
@@ -71,6 +72,21 @@ def _find_stock_table(js: dict):
     return None, []
 
 
+def _find_index_close(js: dict) -> Optional[float]:
+    """找「發行量加權股價指數」收盤，作為超額報酬的比較基準"""
+    tables = list(js.get("tables", []) or [])
+    tables += [{"fields": v, "data": js.get("data" + k[len("fields"):], [])}
+               for k, v in js.items() if k.startswith("fields") and isinstance(v, list)]
+    for t in tables:
+        f = t.get("fields") or []
+        if "收盤指數" not in f:
+            continue
+        for row in t.get("data") or []:
+            if str(row[0]).strip().startswith("發行量加權股價指數"):
+                return _num(row[f.index("收盤指數")])
+    return None
+
+
 def is_common_stock(code: str) -> bool:
     """只看 4 碼普通股；排除 00 開頭的 ETF / 受益憑證"""
     return len(code) == 4 and code.isdigit() and not code.startswith("00")
@@ -109,6 +125,9 @@ def fetch_market_day(date_str: str) -> Optional[Dict[str, dict]]:
             continue   # 當天無成交（收盤價 "--"）
         out[code] = {"name": str(row[ix["證券名稱"]]).strip(), "close": close,
                      "volume": int(shares // 1000), "amount": amount or 0.0}
+    idx = _find_index_close(js)
+    if out and idx:   # 加權指數一起存進快取（成交值 0，掃描時自然略過）
+        out[journal.INDEX_CODE] = {"name": "加權指數", "close": idx, "volume": 0, "amount": 0.0}
     return out or None
 
 
@@ -213,7 +232,8 @@ def main():
     logger.info("=== 全市場掃描 %s ===", date_iso)
 
     state = load_json(STATE_FILE, {})
-    if state.get("last_pushed") == date_iso and not force:
+    already = state.get("last_pushed") == date_iso
+    if already and not force:
         logger.info("%s 已經推播過，略過（手動重跑請設定 FORCE_SCAN=1）", date_iso)
         return
 
@@ -221,12 +241,14 @@ def main():
     if not today:
         logger.warning("%s 收盤資料尚未公布或非交易日，稍後排程會再試", date_iso)
         return
-    logger.info("%s 上市普通股 %d 檔", date_iso, len(today))
+    n_all = sum(1 for c in today if is_common_stock(c))
+    logger.info("%s 上市普通股 %d 檔", date_iso, n_all)
 
     cache = load_json(CACHE_FILE, {})
     add_day(cache, date_iso, today)
     bootstrap(cache, scan_date)
     save_json(CACHE_FILE, cache)
+    journal.backfill(cache)
 
     n_liquid = sum(1 for d in today.values() if d["amount"] >= MIN_DAY_AMT)
     hits = scan(cache, date_iso, today)
@@ -238,15 +260,23 @@ def main():
                     e["breakout"], e["strong_vol"], e["near_low"], e["rise_from_low"])
 
     detail = hits[:MAX_DETAIL]
-    ok = send_telegram(format_summary(date_iso, len(today), n_liquid, hits, len(detail)))
+    ok = send_telegram(format_summary(date_iso, n_all, n_liquid, hits, len(detail)))
+    results = {}
     for h in detail:
         result = check_news(h["code"], h["name"])
         if result:
             logger.info("  [NEWS] %s %s（Jev 呼叫 %d 次）", h["code"], result["verdict"],
                         result.get("jev_calls", 0))
+        results[h["code"]] = result
         msg = format_signal("scan", h["code"], h["name"], h["ev"], h["ev"]["pct"],
                             format_news_block(result, h["ev"]["pct"]))
         ok = send_telegram(msg) and ok
+
+    if not already:   # 強制重跑不重複記錄
+        for h in hits:   # 摘要裡未查新聞的也記錄（news_verdict = unchecked），方便比較
+            journal.record("market", h["code"], h["name"], slot="close", date=date_iso,
+                           price=today[h["code"]]["close"], pct=h["ev"]["pct"], ev=h["ev"],
+                           news=results.get(h["code"]))
 
     if ok:
         state["last_pushed"] = date_iso

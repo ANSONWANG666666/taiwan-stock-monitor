@@ -50,6 +50,50 @@ LOOKBACK_HOURS = int(os.environ.get("NEWS_LOOKBACK_HOURS", "48"))
 MAX_ITEMS = int(os.environ.get("NEWS_MAX_ITEMS", "8"))
 SYMBOL_TTL_MIN = int(os.environ.get("NEWS_SYMBOL_TTL_MIN", "30"))  # 同一檔股票多久內不重查
 
+# ── 每日呼叫上限 ─────────────────────────────────────────────────────
+# 三支程式各有自己的額度（在各自的 workflow 設定），合計預設 300 次／天。
+# 超過後推播照常送出，只是不附新聞查證。0 = 不限制。
+BUDGET_FILE = Path("jev_budget.json")
+DAILY_LIMIT = int(os.environ.get("JEV_DAILY_LIMIT", "0"))
+PRICE_PER_M_INPUT = 0.042   # US$／百萬 input tokens（TypeSafe 官方定價，輸出不計費）
+
+
+def _today() -> str:
+    return datetime.now(TZ).strftime("%Y-%m-%d")
+
+
+def budget_status() -> dict:
+    b = {}
+    if BUDGET_FILE.exists():
+        try:
+            b = json.loads(BUDGET_FILE.read_text(encoding="utf-8"))
+        except Exception:
+            b = {}
+    if b.get("date") != _today():
+        b = {"date": _today(), "calls": 0, "tokens": 0}
+    return b
+
+
+def _budget_add(calls: int, tokens: int):
+    b = budget_status()
+    b["calls"] += calls
+    b["tokens"] += tokens
+    try:
+        BUDGET_FILE.write_text(json.dumps(b), encoding="utf-8")
+    except Exception as e:
+        logger.warning("Jev 用量紀錄寫入失敗: %s", e)
+    limit = f"／上限 {DAILY_LIMIT}" if DAILY_LIMIT else ""
+    logger.info("Jev 今日用量：%d 次%s、%s tokens（約 US$%.4f）", b["calls"], limit,
+                f"{b['tokens']:,}", b["tokens"] / 1e6 * PRICE_PER_M_INPUT)
+
+
+def budget_remaining() -> Optional[int]:
+    """剩餘可呼叫次數；None = 不限制"""
+    if not DAILY_LIMIT:
+        return None
+    return max(0, DAILY_LIMIT - budget_status()["calls"])
+
+
 # ── 判斷規則（全部在程式碼，可自行調整）──────────────────────────────
 RELEVANCE_MIN = 0.5      # about_company 低於此值視為不相關
 RUMOR_MIN = 0.5          # unconfirmed 高於此值視為傳聞
@@ -134,7 +178,8 @@ def _answers_to_dict(resp) -> dict:
     return out
 
 
-async def _score_items(stock: dict, items: list, api_key: str, transport=None) -> None:
+async def _score_items(stock: dict, items: list, api_key: str, transport=None) -> int:
+    """逐則送 Jev；回傳本次使用的 input tokens"""
     from typesafe_sdk import AsyncTypeSafeClient, RetryPolicy, TypeSafeAPIError
 
     questions = build_questions()
@@ -142,14 +187,18 @@ async def _score_items(stock: dict, items: list, api_key: str, transport=None) -
               "retry": RetryPolicy(max_retries=3, backoff_initial=1.0, backoff_max=10.0)}
     if transport is not None:
         kwargs["transport"] = transport
+    tokens = 0
     async with AsyncTypeSafeClient(**kwargs) as client:
         async def one(it):
+            nonlocal tokens
             try:
                 resp = await client.system_one(build_state(stock, it), questions)
                 it["answers"] = _answers_to_dict(resp)
+                tokens += resp.usage.input_tokens or 0
             except TypeSafeAPIError as e:
                 it["error"] = f"{type(e).__name__}: {str(e)[:100]}"
         await asyncio.gather(*(one(it) for it in items))
+    return tokens
 
 
 # ── 規則：單則分數與結論 ─────────────────────────────────────────────
@@ -221,13 +270,24 @@ def check_news(symbol: str, name: str, transport=None, use_symbol_cache: bool = 
                 it["answers"] = hit["answers"]
             else:
                 todo.append(it)
+        remaining = budget_remaining()
+        skipped = []
+        if remaining is not None and len(todo) > remaining:
+            todo, skipped = todo[:remaining], todo[remaining:]
+            logger.warning("%s：Jev 今日額度剩 %d 次，%d 則新聞不查證", symbol, remaining, len(skipped))
         if todo:
-            asyncio.run(_score_items(stock, todo, api_key, transport))
+            tokens = asyncio.run(_score_items(stock, todo, api_key, transport))
+            _budget_add(len(todo), tokens)
             for it in todo:
                 if it.get("answers"):
                     cache["items"][_item_key(symbol, it["title"])] = {"answers": it["answers"], "ts": time.time()}
-        result = summarize(items)
+        scored_items = [it for it in items if it not in skipped]
+        result = summarize(scored_items)
         result["jev_calls"] = len(todo)
+        if skipped:
+            result["budget_skipped"] = len(skipped)
+            if result["verdict"] == "none":      # 全部因額度沒查，不能說「查無新聞」
+                result["verdict"] = "budget"
         errs = [it["error"] for it in todo if it.get("error")]
         if errs:
             result["errors"] = errs[:3]
@@ -236,7 +296,8 @@ def check_news(symbol: str, name: str, transport=None, use_symbol_cache: bool = 
         logger.warning("新聞查證失敗 %s: %s", symbol, str(e)[:120])
         result = {"verdict": "error", "net": 0.0, "top": [], "n_news": 0, "n_relevant": 0,
                   "message": str(e)[:80]}
-    cache.setdefault("symbols", {})[symbol] = {"ts": time.time(), "result": result}
+    if not result.get("budget_skipped"):   # 額度不足的結果不快取，隔天可以重查
+        cache.setdefault("symbols", {})[symbol] = {"ts": time.time(), "result": result}
     try:
         _save_cache(cache)
     except Exception as e:
@@ -257,6 +318,7 @@ def format_news_block(result: Optional[dict], pct: Optional[float] = None) -> st
         "rumor_driven": "⚠️ 主要是題材或傳聞帶動，證實消息沒有明確方向",
         "none": f"⚠️ 近 {LOOKBACK_HOURS} 小時查無相關新聞，異動原因不明",
         "error": "（新聞查證暫時無法使用）",
+        "budget": "（今日 Jev 額度已用完，未查證）",
     }[v]
     lines = [f"\n📰 <b>新聞查證（Jev）</b>：{head}"]
     # 價格與消息方向不一致時特別提醒（規則在程式碼）
@@ -277,4 +339,6 @@ def format_news_block(result: Optional[dict], pct: Optional[float] = None) -> st
         lines.append(f"  • {title}（{tag}・影響 {a['impact']['score']:.1f}/4{extra}）")
     if result.get("low_conf"):
         lines.append("  <i>Jev 對主要新聞的方向判斷不確定，建議自行看原文</i>")
+    if result.get("budget_skipped") and v != "budget":
+        lines.append(f"  <i>今日 Jev 額度不足，另有 {result['budget_skipped']} 則新聞未查證</i>")
     return "\n".join(lines)
