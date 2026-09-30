@@ -1,8 +1,11 @@
 #!/usr/bin/env python3
 """
-台股主升浪前夜選股程式 v4
+台股「量價齊揚剛起漲」選股程式 v5
 三層推播架構：09:30 早盤觀察 → 13:00 盤中確認 → 14:00 收盤確認
 TWSE 日K歷史（STOCK_DAY）+ 盤中即時資料 + Jev 新聞查證
+
+v5：選股規則改為「量價齊揚剛起漲」（見「訊號檢測」段落）。
+    舊版三個條件中，連漲 4 天必然使「近 3 日上升」成立，等於連漲就直接得 2 分，已移除。
 
 v4 修正：
   - 時段判斷改用台灣時間（GitHub Actions 機器是 UTC，原本 hour==9 永遠不成立）
@@ -213,50 +216,85 @@ def update_today_bar(cache: Dict, twse_data: Dict):
         entry["klines"] = klines[-KEEP_BARS:]
 
 
-# ── 訊號檢測 ───────────────────────────────────────────────────
-def detect_consecutive_gain(klines: List[dict]) -> int:
-    """訊號: 連續上漲天數（>= 4 才算）"""
-    consecutive = 0
+# ── 訊號檢測：量價齊揚剛起漲 ─────────────────────────────────────
+# 必要條件（全部符合才評分）：
+#   量比 >= VOL_RATIO_MIN   今日（預估全日）成交量 / 前 20 日均量
+#   漲幅 >= PCT_MIN         今日收盤 vs 昨日收盤
+#   連漲 <= MAX_STREAK      已經連漲太多天就不算「剛」起漲，避免追高
+# 加分（0–3 分，>= PUSH_SCORE 才推播）：
+#   突破      收盤 > 前 20 日最高收盤
+#   強量      量比 >= STRONG_VOL
+#   低檔起漲  收盤距前 20 日最低收盤 <= NEAR_LOW_PCT（盤整後剛發動，不是漲一大段後）
+VOL_RATIO_MIN = float(os.environ.get("VOL_RATIO_MIN", "2.0"))
+PCT_MIN       = float(os.environ.get("PCT_MIN", "1.0"))
+MAX_STREAK    = int(os.environ.get("MAX_STREAK", "5"))
+STRONG_VOL    = float(os.environ.get("STRONG_VOL", "3.0"))
+NEAR_LOW_PCT  = float(os.environ.get("NEAR_LOW_PCT", "15"))
+PUSH_SCORE    = int(os.environ.get("PUSH_SCORE", "2"))
+BASE_DAYS     = 20
+MIN_BASE_DAYS = 10
+TRADING_MIN   = 270          # 09:00–13:30
+
+
+def volume_fraction(t: datetime) -> float:
+    """盤中已經過的交易時間比例，用來把盤中累計量換算成全日預估量。
+    早盤成交量通常偏大，線性換算會高估，所以 09:30 的訊號只當「低置信度」。"""
+    minutes = (t.hour - 9) * 60 + t.minute
+    return min(1.0, max(0.1, minutes / TRADING_MIN))
+
+
+def up_streak(klines: List[dict]) -> int:
+    n = 0
     for i in range(len(klines) - 1, 0, -1):
         if klines[i]["close"] > klines[i - 1]["close"]:
-            consecutive += 1
+            n += 1
         else:
             break
-    return consecutive if consecutive >= 4 else 0
+    return n
 
 
-def detect_volume_expansion(klines: List[dict]) -> float:
-    """訊號: 近 3 日均量 / 前 20 日均量（>= 2 才算）"""
-    if len(klines) < 8:
-        return 0.0
-    recent = klines[-3:]
-    base = klines[-23:-3]
-    avg_recent = sum(k["volume"] for k in recent) / len(recent)
-    avg_base = sum(k["volume"] for k in base) / len(base)
-    if avg_base <= 0:
-        return 0.0
-    ratio = avg_recent / avg_base
-    return ratio if ratio >= 2.0 else 0.0
+def evaluate_signal(klines: List[dict], now: Optional[datetime] = None) -> Dict:
+    now = now or now_tw()
+    empty = {"qualified": False, "gate": False, "score": 0, "vol_ratio": 0.0, "pct": 0.0,
+             "streak": 0, "breakout": False, "strong_vol": False, "near_low": False,
+             "rise_from_low": 0.0, "projected": False, "reason": "日K不足",
+             "date": now.strftime("%Y-%m-%d %H:%M")}
+    if len(klines) < MIN_BASE_DAYS + 1:
+        return empty
 
+    today, hist = klines[-1], klines[:-1]
+    base = hist[-BASE_DAYS:]
+    avg_vol = sum(k["volume"] for k in base) / len(base)
+    projected = today["date"] == now.strftime("%Y-%m-%d") and volume_fraction(now) < 1.0
+    vol = today["volume"] / volume_fraction(now) if projected else today["volume"]
+    vol_ratio = vol / avg_vol if avg_vol > 0 else 0.0
 
-def detect_upward_trend(klines: List[dict]) -> bool:
-    """訊號: 近 3 日上升趨勢"""
-    if len(klines) < 3:
-        return False
-    return klines[-1]["close"] > klines[-3]["close"]
+    close, prev_close = today["close"], hist[-1]["close"]
+    pct = (close - prev_close) / prev_close * 100 if prev_close else 0.0
+    high20 = max(k["close"] for k in base)
+    low20 = min(k["close"] for k in base)
+    rise_from_low = (close / low20 - 1) * 100 if low20 else 0.0
+    streak = up_streak(klines)
 
+    breakout = close > high20
+    strong_vol = vol_ratio >= STRONG_VOL
+    near_low = rise_from_low <= NEAR_LOW_PCT
 
-def evaluate_signal(klines: List[dict]) -> Dict:
-    consecutive = detect_consecutive_gain(klines)
-    volume_ratio = detect_volume_expansion(klines)
-    uptrend = detect_upward_trend(klines)
-    score = sum([consecutive >= 4, volume_ratio >= 2.0, uptrend])
+    reasons = []
+    if vol_ratio < VOL_RATIO_MIN:
+        reasons.append(f"量比 {vol_ratio:.1f} < {VOL_RATIO_MIN:g}")
+    if pct < PCT_MIN:
+        reasons.append(f"漲幅 {pct:.1f}% < {PCT_MIN:g}%")
+    if streak > MAX_STREAK:
+        reasons.append(f"已連漲 {streak} 天")
+    gate = not reasons
+    score = int(breakout) + int(strong_vol) + int(near_low) if gate else 0
     return {
-        "score": int(score),
-        "consecutive_gain": consecutive,
-        "volume_ratio": round(volume_ratio, 2),
-        "uptrend": uptrend,
-        "date": now_tw().strftime("%Y-%m-%d %H:%M"),
+        "qualified": gate and score >= PUSH_SCORE, "gate": gate, "score": score,
+        "vol_ratio": round(vol_ratio, 2), "pct": round(pct, 2), "streak": streak,
+        "breakout": breakout, "strong_vol": strong_vol, "near_low": near_low,
+        "rise_from_low": round(rise_from_low, 1), "projected": projected,
+        "reason": "；".join(reasons), "date": now.strftime("%Y-%m-%d %H:%M"),
     }
 
 
@@ -292,14 +330,18 @@ def format_signal(slot: str, symbol: str, name: str, s: Dict, pct: float, news_b
     emoji, title, note = SLOT_HEADER[slot]
     sign = "+" if pct >= 0 else ""
     color = "🔴" if pct >= 0 else "🟢"      # 台股：紅漲綠跌
+    ok = lambda b: "✅" if b else "▫️"
+    vol_note = "（盤中預估全日量）" if s.get("projected") else ""
+    gate = "" if s.get("gate") else f"\n  ⛔ 未達必要條件：{html.escape(s.get('reason', ''))}"
     return (
         f"{emoji} <b>【{title}】{html.escape(name)}（{symbol}）</b>\n"
         f"{note}\n"
-        f"💵 今日 {color} {sign}{pct:.2f}%\n"
-        f"📊 評分: {s['score']}/3\n"
-        f"  連陽: {s['consecutive_gain']} 天\n"
-        f"  量倍: {s['volume_ratio']}x（近3日 / 前20日）\n"
-        f"  趨勢: {'↑ 上升' if s['uptrend'] else '→ 持平'}\n"
+        f"💵 今日 {color} {sign}{pct:.2f}%　量比 {s['vol_ratio']}x{vol_note}\n"
+        f"📊 起漲評分: {s['score']}/3{gate}\n"
+        f"  {ok(s['breakout'])} 突破前 20 日高點\n"
+        f"  {ok(s['strong_vol'])} 強量（量比 ≥ {STRONG_VOL:g}）\n"
+        f"  {ok(s['near_low'])} 低檔起漲（距 20 日低點 +{s['rise_from_low']}%）\n"
+        f"  連漲 {s['streak']} 天\n"
         f"🕐 {s['date']}\n"
         f"🔗 <a href='https://tw.stock.yahoo.com/quote/{symbol}'>查看行情</a>"
         f"{news_block}"
@@ -342,9 +384,11 @@ def run_test(symbol: str) -> int:
             time.sleep(0.6)
         klines = sorted({k["date"]: k for k in klines}.values(), key=lambda k: k["date"])
         logger.info("%s：臨時抓取日K %d 根（不寫入快取）", symbol, len(klines))
-    ev = evaluate_signal(klines) if klines else {
-        "score": 0, "consecutive_gain": 0, "volume_ratio": 0.0, "uptrend": False,
-        "date": now_tw().strftime("%Y-%m-%d %H:%M")}
+    today_str = now_tw().strftime("%Y-%m-%d")
+    if live:   # 把今天的即時資料併進日K，和正式流程一致
+        klines = [k for k in klines if k["date"] != today_str] + [
+            {"date": today_str, "close": live["close"], "volume": live["volume"]}]
+    ev = evaluate_signal(klines)
 
     result = check_news(symbol, name, use_symbol_cache=False)
     if result is None:
@@ -396,9 +440,10 @@ def main():
         live = parse_live(twse_data.get(symbol, {})) or {}
         prev = live.get("prev") or 0
         pct = (live["close"] - prev) / prev * 100 if live and prev else 0.0
-        logger.info("%s: 評分 %d 連陽 %d 量倍 %.2f 趨勢 %s", symbol, ev["score"],
-                    ev["consecutive_gain"], ev["volume_ratio"], ev["uptrend"])
-        if ev["score"] >= 2:
+        logger.info("%s: 評分 %d 量比 %.2f 漲幅 %.2f%% 突破 %s 強量 %s 低檔 %s 連漲 %d %s", symbol,
+                    ev["score"], ev["vol_ratio"], ev["pct"], ev["breakout"], ev["strong_vol"],
+                    ev["near_low"], ev["streak"], ev["reason"])
+        if ev["qualified"]:
             candidates[symbol] = {"score": ev["score"], "eval": ev, "pct": pct,
                                   "name": cache[symbol].get("name", "")}
 
