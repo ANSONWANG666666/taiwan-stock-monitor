@@ -1,34 +1,29 @@
-name: 台股全市場掃描
+name: 台股盤中監控
 
+# 開盤前觸發一次，同一個執行持續到收盤後：
+#   09:00–13:35 每 5 分鐘大單監控；09:30／13:00／13:50 盤中選股
+# 主要由 cron-job.org 在 08:50 準時觸發（見 docs/外部排程設定.md）；
+# 下面的 GitHub 排程只是備援，GitHub 常延遲或跳過，時間刻意避開整點。
+# 同一時間只會有一個在跑；後到的會排隊，等前一個結束後發現已過 14:10 就直接結束。
 on:
-  schedule:
-    # 主要由 cron-job.org 在 15:10 觸發；以下為備援（GitHub 常延遲），同一天已推播過會自動跳過
-    - cron: '17 7 * * 1-5'    # 15:17
-    - cron: '47 8 * * 1-5'    # 16:47
-    - cron: '17 10 * * 1-5'   # 18:17
-    - cron: '17 12 * * 1-5'   # 20:17
   workflow_dispatch:
-    inputs:
-      scan_date:
-        description: '掃描日期 YYYYMMDD（留空為今天）'
-        required: false
-        default: ''
-      force:
-        description: '同一天已推播過仍重新推播（填 1）'
-        required: false
-        default: ''
+  schedule:
+    - cron: '47 0 * * 1-5'   # 08:47
+    - cron: '13 1 * * 1-5'   # 09:13
+    - cron: '43 2 * * 1-5'   # 10:43
+    - cron: '13 4 * * 1-5'   # 12:13
 
 concurrency:
-  group: market-scan
+  group: intraday
   cancel-in-progress: false
 
 permissions:
   contents: write   # 寫入 journal 分支
 
 jobs:
-  scan:
+  intraday:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 345
 
     steps:
       - name: Checkout 程式碼
@@ -50,30 +45,32 @@ jobs:
       - name: 安裝套件
         run: pip install -r requirements.txt
 
-      - name: 讀取全市場日K快取
+      - name: 讀取盤中狀態快取
         uses: actions/cache@v4
         with:
           path: |
-            market_cache.json
-            market_scan_state.json
+            stock_state.json
+            screener_kline_cache.json
+            screener_status.json
             jev_news_cache.json
             jev_budget.json
-          key: market-scan-${{ github.run_id }}
+          key: intraday-${{ github.run_id }}
           restore-keys: |
-            market-scan-
+            intraday-
 
-      - name: 執行全市場掃描
+      - name: 盤中監控（持續到收盤後）
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID:   ${{ secrets.TELEGRAM_CHAT_ID }}
           TYPESAFE_API_KEY:   ${{ secrets.TYPESAFE_API_KEY }}
-          JEV_DAILY_LIMIT:    '100'
+          JEV_DAILY_LIMIT:    '200'          # 大單監控＋盤中選股合計
           JOURNAL_DIR:        journal-data
-          SCAN_DATE:          ${{ github.event.inputs.scan_date }}
-          FORCE_SCAN:         ${{ github.event.inputs.force }}
-          MAX_DETAIL:         '10'
-        run: python market_scan.py
-      # 訊號紀錄簿存在 journal 分支；失敗會重試，不影響推播
+          LARGE_BID_THRESHOLD: '1000'
+          VOLUME_SPIKE_RATIO:  '3.0'
+          VOLUME_SPIKE_MIN:    '200'
+          PYTHONUNBUFFERED:   '1'
+        run: python intraday_loop.py
+
       - name: 儲存訊號紀錄
         if: always()
         run: |
@@ -89,4 +86,3 @@ jobs:
             sleep $((i * 5))
           done
           echo "::warning::訊號紀錄推送失敗"
-

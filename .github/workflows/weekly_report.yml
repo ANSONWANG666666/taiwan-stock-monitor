@@ -2,9 +2,15 @@ name: 台股訊號成效週報
 
 on:
   schedule:
-    # 每週五 17:05 台灣時間（UTC 09:05），在全市場掃描回填報酬之後
-    - cron: '5 9 * * 5'
-  workflow_dispatch:   # 可隨時手動執行
+    # 主要由 cron-job.org 在週五 17:10 觸發；以下為備援，同一天已推播過會自動跳過
+    - cron: '17 9 * * 5'     # 17:17
+    - cron: '47 11 * * 5'    # 19:47
+  workflow_dispatch:
+    inputs:
+      force:
+        description: '今天已推播過仍重新推播（填 1）'
+        required: false
+        default: ''
 
 permissions:
   contents: read
@@ -24,6 +30,14 @@ jobs:
           ref: journal
           path: journal-data
 
+      - name: 讀取週報狀態
+        uses: actions/cache@v4
+        with:
+          path: weekly_state.json
+          key: weekly-${{ github.run_id }}
+          restore-keys: |
+            weekly-
+
       - name: 設定 Python 3.11
         uses: actions/setup-python@v5
         with:
@@ -38,4 +52,5 @@ jobs:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID:   ${{ secrets.TELEGRAM_CHAT_ID }}
           JOURNAL_DIR:        journal-data
+          FORCE_REPORT:       ${{ github.event.inputs.force }}
         run: python weekly_report.py
