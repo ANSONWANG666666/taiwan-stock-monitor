@@ -70,10 +70,19 @@ def test_full_report(tmp_path):
     assert len(msg) < 4096
 
 
-def test_main_sends(tmp_path, monkeypatch):
-    _write(tmp_path, "market", [_row("market", "2026-10-01", "3481", "rumor_driven", 2, 1.5)])
-    monkeypatch.setenv("JOURNAL_DIR", str(tmp_path))
+def test_main_sends_once_per_day(tmp_path, monkeypatch):
+    jd = tmp_path / "journal-data"
+    jd.mkdir()
+    _write(jd, "market", [_row("market", "2026-10-01", "3481", "rumor_driven", 2, 1.5)])
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(weekly_report, "STATE_FILE", tmp_path / "weekly_state.json")
+    monkeypatch.setenv("JOURNAL_DIR", str(jd))
     sent = []
     monkeypatch.setattr(weekly_report, "send_telegram", lambda t: sent.append(t) or True)
     weekly_report.main()
     assert len(sent) == 1 and sent[0].startswith("📈")
+    weekly_report.main()                      # 備援排程再觸發：略過
+    assert len(sent) == 1
+    monkeypatch.setenv("FORCE_REPORT", "1")   # 手動強制
+    weekly_report.main()
+    assert len(sent) == 2

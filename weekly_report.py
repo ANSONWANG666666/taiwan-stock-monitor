@@ -14,6 +14,7 @@
 
 import csv
 import html
+import json
 import logging
 import os
 from collections import defaultdict
@@ -31,6 +32,7 @@ logger = logging.getLogger(__name__)
 
 TZ = ZoneInfo("Asia/Taipei")
 MIN_SAMPLE = int(os.environ.get("MIN_SAMPLE", "30"))
+STATE_FILE = Path("weekly_state.json")   # 防止備援排程重複推播
 
 SOURCE_LABEL = {"market": "全市場掃描", "screener": "盤中選股", "monitor": "大單監控"}
 VERDICT_LABEL = {
@@ -153,6 +155,16 @@ def build_report(rows: List[dict], today: datetime) -> str:
 
 
 def main():
+    today = datetime.now(TZ).strftime("%Y-%m-%d")
+    state = {}
+    if STATE_FILE.exists():
+        try:
+            state = json.loads(STATE_FILE.read_text(encoding="utf-8"))
+        except Exception:
+            state = {}
+    if state.get("last_sent") == today and os.environ.get("FORCE_REPORT") != "1":
+        logger.info("今天已推播過週報，略過（手動重跑請填 force=1）")
+        return
     d = journal_dir()
     if not d.is_dir():
         logger.error("找不到訊號紀錄簿資料夾 %s", d)
@@ -163,7 +175,8 @@ def main():
     logger.info("\n%s", msg)
     if len(msg) > 4000:   # Telegram 單則上限 4096 字
         msg = msg[:3990] + "\n…"
-    send_telegram(msg)
+    if send_telegram(msg):
+        STATE_FILE.write_text(json.dumps({"last_sent": today}), encoding="utf-8")
 
 
 if __name__ == "__main__":
