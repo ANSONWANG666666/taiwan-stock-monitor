@@ -29,8 +29,9 @@ HEADERS = {
 }
 CACHE_DAYS = 30
 REQUEST_GAP = 1.5
-MAX_FETCH = 80            # 每次最多查幾檔（控制執行時間）
-MAX_CONCEPTS = 3
+MAX_FETCH = 150           # 每次最多查幾檔（約 4 分鐘）；第一次建立全部母數約需 3 天
+MAX_CONCEPTS = 10         # 儲存的概念股上限（算族群母數用）
+LABEL_CONCEPTS = 2        # 推播標籤顯示幾個概念股
 
 _A = r'<a\b[^>]*href="(?:https?://www\.cmoney\.tw)?/forum/{kind}/(C\d+)[^"]*"[^>]*>(.*?)</a>'
 
@@ -74,7 +75,8 @@ def fetch(code: str) -> Optional[dict]:
 
 
 def get_tags(codes: List[str], cache: dict, today_iso: str) -> Dict[str, dict]:
-    """回傳 {代號: {sub_industry, concepts}}；cache 會被更新（存在全市場快取裡）"""
+    """回傳 {代號: {sub_industry, concepts}}；cache 會被更新（存在全市場快取裡）
+    codes 依優先順序排列（符合條件的股票放前面），每次最多查 MAX_FETCH 檔"""
     store = cache.setdefault("cmoney", {})
     cutoff = (datetime.fromisoformat(today_iso) - timedelta(days=CACHE_DAYS)).strftime("%Y-%m-%d")
     todo = [c for c in codes if store.get(c, {}).get("date", "") < cutoff]
@@ -117,5 +119,5 @@ def label(tags: Optional[dict]) -> str:
         return ""
     parts = [tags.get("sub_industry", "")]
     if tags.get("concepts"):
-        parts.append("・".join(tags["concepts"]))
+        parts.append("・".join(tags["concepts"][:LABEL_CONCEPTS]))
     return "｜".join(p for p in parts if p)

@@ -145,6 +145,7 @@ INDUSTRY_NAMES = {
 }
 INDUSTRY_REFRESH_DAYS = 7
 SECTOR_TOP = 6               # 摘要列出幾個族群
+FLOW_DAYS = 20              # 族群量比的比較基準：前 20 個交易日
 
 
 def fetch_industry_map() -> Dict[str, str]:
@@ -179,21 +180,67 @@ def get_industry_map(cache: dict, today_iso: str) -> Dict[str, str]:
     return cache.get("industry", {})
 
 
-def sector_stats(hits: List[dict], today: Dict[str, dict], industry: Dict[str, str]) -> List[tuple]:
-    """回傳 [(族群, 符合檔數, 該族群流動性合格檔數)]，依符合檔數、占比排序"""
-    if not industry:
+def stock_flow(cache: dict, code: str, date_iso: str) -> Optional[tuple]:
+    """(今日成交值, 前 20 日平均成交值, 今日漲跌 %)；資料不足回傳 None"""
+    bars = [b for b in cache.get("stocks", {}).get(code, {}).get("bars", []) if b[0] <= date_iso]
+    if len(bars) < 2 or bars[-1][0] != date_iso:
+        return None
+    today, hist = bars[-1], bars[:-1][-FLOW_DAYS:]
+    avg = sum(b[1] * b[2] for b in hist) / len(hist)
+    pct = (today[1] / hist[-1][1] - 1) * 100 if hist[-1][1] else 0.0
+    return today[1] * today[2], avg, pct
+
+
+def group_strength(members: Dict[str, List[str]], hit_codes: set, cache: dict, date_iso: str) -> List[dict]:
+    """每個族群：起漲檔數 k／成員 n、上漲家數、族群量比（今日成交值合計 ÷ 前 20 日平均合計）"""
+    out = []
+    for name, codes in members.items():
+        k = sum(1 for c in codes if c in hit_codes)
+        if not k:
+            continue
+        flows = [f for f in (stock_flow(cache, c, date_iso) for c in codes) if f]
+        base = sum(f[1] for f in flows)
+        out.append({"name": name, "k": k, "n": len(codes),
+                    "up": sum(1 for f in flows if f[2] > 0),
+                    "flow": sum(f[0] for f in flows) / base if base else 0.0})
+    out.sort(key=lambda g: (g["k"], g["k"] / g["n"]), reverse=True)
+    return out
+
+
+def build_groups(liquid: List[str], industry: Dict[str, str], tags: Dict[str, dict]) -> tuple:
+    """以「成交值合格」的股票為母體，建立 TWSE 大類、CMoney 細產業、概念股三種族群成員表"""
+    big, sub, con = {}, {}, {}
+    for c in liquid:
+        if industry:
+            big.setdefault(industry.get(c, "未分類"), []).append(c)
+        t = tags.get(c)
+        if not t:
+            continue
+        if t.get("sub_industry"):
+            sub.setdefault(t["sub_industry"], []).append(c)
+        for x in t.get("concepts", []):
+            con.setdefault(x, []).append(c)
+    return big, sub, con
+
+
+def is_flowing(g: dict) -> bool:
+    """資金流入：至少 3 檔起漲、占成員 20% 以上、族群量比 ≥ 1.5"""
+    return g["k"] >= 3 and g["k"] / g["n"] >= 0.2 and g["flow"] >= 1.5
+
+
+def format_groups(title: str, groups: List[dict], with_base: bool = True) -> List[str]:
+    show = [g for g in groups if g["k"] >= 2][:SECTOR_TOP]
+    if not show:
         return []
-    liquid, hit = {}, {}
-    for code, d in today.items():
-        if is_common_stock(code) and d["amount"] >= MIN_DAY_AMT:
-            g = industry.get(code, "未分類")
-            liquid[g] = liquid.get(g, 0) + 1
-    for h in hits:
-        g = industry.get(h["code"], "未分類")
-        hit[g] = hit.get(g, 0) + 1
-    rows = [(g, n, liquid.get(g, n)) for g, n in hit.items()]
-    rows.sort(key=lambda r: (r[1], r[1] / r[2]), reverse=True)
-    return rows
+    lines = [title]
+    for g in show:
+        if with_base:
+            mark = " 🔥" if is_flowing(g) else ""
+            lines.append(f"• {html.escape(g['name'])}　起漲 {g['k']}／{g['n']}｜量比 {g['flow']:.1f}x"
+                         f"｜上漲 {g['up']}／{g['n']}{mark}")
+        else:
+            lines.append(f"• {html.escape(g['name'])}　起漲 {g['k']}")
+    return lines
 
 
 # ── 快取 ─────────────────────────────────────────────────────────
@@ -299,9 +346,10 @@ def scan(cache: dict, date_iso: str, today: Dict[str, dict]) -> List[dict]:
 
 
 def format_summary(date_iso: str, n_all: int, n_liquid: int, hits: List[dict], detail_n: int,
-                   sectors: Optional[List[tuple]] = None, industry: Optional[Dict[str, str]] = None,
-                   tags: Optional[Dict[str, dict]] = None) -> str:
-    industry, tags = industry or {}, tags or {}
+                   groups: Optional[dict] = None, industry: Optional[Dict[str, str]] = None,
+                   tags: Optional[Dict[str, dict]] = None, coverage: float = 0.0) -> str:
+    """groups = {"big": [...], "sub": [...], "con": [...]}（group_strength 的結果）"""
+    industry, tags, groups = industry or {}, tags or {}, groups or {}
     lines = [f"📡 <b>全市場掃描｜{date_iso} 收盤</b>",
              f"上市普通股 {n_all:,} 檔 → 成交值 ≥ {MIN_DAY_AMT/1e8:g} 億 {n_liquid:,} 檔 → "
              f"<b>符合剛起漲 {len(hits)} 檔</b>"]
@@ -310,25 +358,22 @@ def format_summary(date_iso: str, n_all: int, n_liquid: int, hits: List[dict], d
         return "\n".join(lines)
     if detail_n:
         lines.append(f"前 {detail_n} 檔逐檔推播並附 Jev 新聞查證。")
-    if sectors:
-        multi = [s for s in sectors if s[1] >= 2][:SECTOR_TOP]
-        if multi:
-            lines.append("\n🏭 <b>族群</b>（符合檔數／該族群成交值合格檔數）")
-            lines.append("　".join(f"{html.escape(g)} {n}／{tot}" for g, n, tot in multi))
-            top = multi[0]
-            if top[1] >= 3 and top[1] / top[2] >= 0.2:
-                lines.append(f"👉 資金集中在<b>{html.escape(top[0])}</b>：合格股中 {top[1] / top[2]:.0%} 同步起漲")
-        singles = len([s for s in sectors if s[1] == 1])
-        if singles:
-            lines.append(f"<i>另有 {singles} 個族群各 1 檔</i>")
-    if tags:
-        sub, con = cmoney_tags.count_tags(hits, tags)
-        sub2 = [(g, n) for g, n in sub if n >= 2][:SECTOR_TOP]
-        con2 = [(g, n) for g, n in con if n >= 2][:SECTOR_TOP]
-        if sub2:
-            lines.append("🔎 <b>細產業</b>：" + "、".join(f"{html.escape(g)} {n}" for g, n in sub2))
-        if con2:
-            lines.append("💡 <b>概念股</b>：" + "、".join(f"{html.escape(g)} {n}" for g, n in con2))
+
+    if any(groups.get(k) for k in ("big", "sub", "con")):
+        lines.append("\n<i>起漲＝符合剛起漲檔數／該族群成交值合格檔數；量比＝族群今日成交值 ÷ 前 20 日平均；"
+                     "🔥＝資金流入（≥3 檔起漲、占 20% 以上、量比 ≥ 1.5）</i>")
+    lines += format_groups("🏭 <b>族群（TWSE 大類）</b>", groups.get("big", []))
+    full = coverage >= 0.8
+    lines += format_groups("🔎 <b>細產業</b>", groups.get("sub", []), with_base=full)
+    lines += format_groups("💡 <b>概念股</b>", groups.get("con", []), with_base=full)
+    if (groups.get("sub") or groups.get("con")) and not full:
+        lines.append(f"<i>細產業／概念股母數建立中（已完成 {coverage:.0%}），完成前只顯示起漲檔數</i>")
+    hot = [g for k in ("sub", "con", "big") for g in groups.get(k, []) if is_flowing(g)]
+    if hot and (full or hot[0] in groups.get("big", [])):
+        g = hot[0]
+        lines.append(f"👉 資金流入<b>{html.escape(g['name'])}</b>：{g['n']} 檔中 {g['k']} 檔起漲、"
+                     f"{g['up']} 檔上漲、族群量比 {g['flow']:.1f}x")
+
     rest = hits[detail_n:]
     if rest:
         lines.append("\n<b>其他符合條件（未查新聞）</b>")
@@ -375,11 +420,19 @@ def main():
     hits = scan(cache, date_iso, today)
     industry = get_industry_map(cache, date_iso)
     save_json(CACHE_FILE, cache)
-    sectors = sector_stats(hits, today, industry)
-    tags = cmoney_tags.get_tags([h["code"] for h in hits], cache, date_iso)
+    liquid = sorted((c for c, d in today.items() if is_common_stock(c) and d["amount"] >= MIN_DAY_AMT),
+                    key=lambda c: today[c]["amount"], reverse=True)
+    hit_codes = [h["code"] for h in hits]
+    tags = cmoney_tags.get_tags(hit_codes + [c for c in liquid if c not in set(hit_codes)], cache, date_iso)
     save_json(CACHE_FILE, cache)
-    if sectors:
-        logger.info("族群：%s", "、".join(f"{g} {n}/{t}" for g, n, t in sectors))
+    coverage = sum(1 for c in liquid if c in tags) / len(liquid) if liquid else 0.0
+    big, sub, con = build_groups(liquid, industry, tags)
+    groups = {k: group_strength(m, set(hit_codes), cache, date_iso)
+              for k, m in (("big", big), ("sub", sub), ("con", con))}
+    logger.info("細分類覆蓋率 %.0f%%", coverage * 100)
+    for k, label in (("big", "大類"), ("sub", "細產業"), ("con", "概念股")):
+        for g in groups[k][:10]:
+            logger.info("  %s %s：起漲 %d/%d 上漲 %d 量比 %.2f", label, g["name"], g["k"], g["n"], g["up"], g["flow"])
     logger.info("成交值合格 %d 檔，符合條件 %d 檔", n_liquid, len(hits))
     for h in hits:
         e = h["ev"]
@@ -388,7 +441,7 @@ def main():
                     e["breakout"], e["strong_vol"], e["near_low"], e["rise_from_low"])
 
     detail = hits[:MAX_DETAIL]
-    ok = send_telegram(format_summary(date_iso, n_all, n_liquid, hits, len(detail), sectors, industry, tags))
+    ok = send_telegram(format_summary(date_iso, n_all, n_liquid, hits, len(detail), groups, industry, tags, coverage))
     results = {}
     for h in detail:
         result = check_news(h["code"], h["name"])

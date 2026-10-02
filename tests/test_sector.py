@@ -52,11 +52,13 @@ def test_sector_summary(scan_env, monkeypatch, tmp_path):
     monkeypatch.setenv("JOURNAL_DIR", str(jd))
     market_scan.main()
     summary = sent[0]
-    assert "🏭 <b>族群</b>" in summary
-    assert "鋼鐵 7／7" in summary and "半導體 5／6" in summary      # 台積電也在半導體合格股裡
-    assert summary.index("鋼鐵 7／7") < summary.index("半導體 5／6")
-    assert "資金集中在<b>鋼鐵</b>：合格股中 100% 同步起漲" in summary
-    assert "另有 1 個族群各 1 檔" in summary                     # 光電只有群創
+    assert "🏭 <b>族群（TWSE 大類）</b>" in summary
+    assert "• 鋼鐵　起漲 7／7｜量比" in summary
+    assert "• 半導體　起漲 5／6｜量比" in summary                 # 台積電也在半導體合格股裡
+    assert summary.index("鋼鐵　起漲") < summary.index("半導體　起漲")
+    assert "上漲 7／7 🔥" in summary                              # 全數起漲、量比 ≥ 1.5 → 資金流入
+    assert "👉 資金流入<b>鋼鐵</b>" in summary
+    assert "光電" not in summary.split("其他符合條件")[0]          # 只有 1 檔的族群不列
     assert "4100　鋼鐵　3/3" in summary                          # 摘要清單每檔帶族群
     rows = list(csv.DictReader((jd / "signals_market.csv").open(encoding="utf-8-sig")))
     assert {r["industry"] for r in rows} == {"光電", "鋼鐵", "半導體"}
