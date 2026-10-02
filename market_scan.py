@@ -28,6 +28,7 @@ from zoneinfo import ZoneInfo
 
 import requests
 
+import cmoney_tags
 import journal
 from news_check import check_news, format_news_block
 from stock_screener import evaluate_signal, format_signal, send_telegram
@@ -298,8 +299,9 @@ def scan(cache: dict, date_iso: str, today: Dict[str, dict]) -> List[dict]:
 
 
 def format_summary(date_iso: str, n_all: int, n_liquid: int, hits: List[dict], detail_n: int,
-                   sectors: Optional[List[tuple]] = None, industry: Optional[Dict[str, str]] = None) -> str:
-    industry = industry or {}
+                   sectors: Optional[List[tuple]] = None, industry: Optional[Dict[str, str]] = None,
+                   tags: Optional[Dict[str, dict]] = None) -> str:
+    industry, tags = industry or {}, tags or {}
     lines = [f"📡 <b>全市場掃描｜{date_iso} 收盤</b>",
              f"上市普通股 {n_all:,} 檔 → 成交值 ≥ {MIN_DAY_AMT/1e8:g} 億 {n_liquid:,} 檔 → "
              f"<b>符合剛起漲 {len(hits)} 檔</b>"]
@@ -319,12 +321,20 @@ def format_summary(date_iso: str, n_all: int, n_liquid: int, hits: List[dict], d
         singles = len([s for s in sectors if s[1] == 1])
         if singles:
             lines.append(f"<i>另有 {singles} 個族群各 1 檔</i>")
+    if tags:
+        sub, con = cmoney_tags.count_tags(hits, tags)
+        sub2 = [(g, n) for g, n in sub if n >= 2][:SECTOR_TOP]
+        con2 = [(g, n) for g, n in con if n >= 2][:SECTOR_TOP]
+        if sub2:
+            lines.append("🔎 <b>細產業</b>：" + "、".join(f"{html.escape(g)} {n}" for g, n in sub2))
+        if con2:
+            lines.append("💡 <b>概念股</b>：" + "、".join(f"{html.escape(g)} {n}" for g, n in con2))
     rest = hits[detail_n:]
     if rest:
         lines.append("\n<b>其他符合條件（未查新聞）</b>")
         for h in rest[:SUMMARY_MAX]:
             e = h["ev"]
-            g = industry.get(h["code"])
+            g = cmoney_tags.label(tags.get(h["code"])) or industry.get(h["code"])
             tag = f"　{html.escape(g)}" if g else ""
             lines.append(f"• {html.escape(h['name'])} {h['code']}{tag}　{e['score']}/3　"
                          f"🔴 +{e['pct']:.1f}%　量比 {e['vol_ratio']:.1f}x")
@@ -366,6 +376,8 @@ def main():
     industry = get_industry_map(cache, date_iso)
     save_json(CACHE_FILE, cache)
     sectors = sector_stats(hits, today, industry)
+    tags = cmoney_tags.get_tags([h["code"] for h in hits], cache, date_iso)
+    save_json(CACHE_FILE, cache)
     if sectors:
         logger.info("族群：%s", "、".join(f"{g} {n}/{t}" for g, n, t in sectors))
     logger.info("成交值合格 %d 檔，符合條件 %d 檔", n_liquid, len(hits))
@@ -376,7 +388,7 @@ def main():
                     e["breakout"], e["strong_vol"], e["near_low"], e["rise_from_low"])
 
     detail = hits[:MAX_DETAIL]
-    ok = send_telegram(format_summary(date_iso, n_all, n_liquid, hits, len(detail), sectors, industry))
+    ok = send_telegram(format_summary(date_iso, n_all, n_liquid, hits, len(detail), sectors, industry, tags))
     results = {}
     for h in detail:
         result = check_news(h["code"], h["name"])
@@ -384,8 +396,10 @@ def main():
             logger.info("  [NEWS] %s %s（Jev 呼叫 %d 次）", h["code"], result["verdict"],
                         result.get("jev_calls", 0))
         results[h["code"]] = result
+        tag_line = cmoney_tags.label(tags.get(h["code"])) or industry.get(h["code"], "")
+        tag_line = f"\n🏷️ {html.escape(tag_line)}" if tag_line else ""
         msg = format_signal("scan", h["code"], h["name"], h["ev"], h["ev"]["pct"],
-                            format_news_block(result, h["ev"]["pct"]))
+                            tag_line + format_news_block(result, h["ev"]["pct"]))
         ok = send_telegram(msg) and ok
 
     if already:   # 強制重跑：先刪掉這一天原本的紀錄再重寫，避免重複或保留錯誤資料
@@ -393,6 +407,8 @@ def main():
     for h in hits:   # 摘要裡未查新聞的也記錄（news_verdict = unchecked），方便比較
         journal.record("market", h["code"], h["name"], slot="close", date=date_iso,
                        industry=industry.get(h["code"], ""),
+                       sub_industry=tags.get(h["code"], {}).get("sub_industry", ""),
+                       concepts="・".join(tags.get(h["code"], {}).get("concepts", [])),
                        price=today[h["code"]]["close"], pct=h["ev"]["pct"], ev=h["ev"],
                        news=results.get(h["code"]))
 
