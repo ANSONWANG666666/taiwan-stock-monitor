@@ -227,6 +227,29 @@ def add_day(cache: dict, date_iso: str, day: Dict[str, dict]):
         del stocks[code]
 
 
+def fill_gaps(cache: dict, scan_date: datetime, max_days: int = 20):
+    """補齊「快取最後一天」到掃描日之間漏掉的交易日。
+    某天沒掃描（排程失靈）時，下一次掃描若不補，漲幅、量比會拿錯的前一天比較。"""
+    have = set(cache.get("days", []))
+    target = scan_date.strftime("%Y-%m-%d")
+    before = [d for d in have if d < target]
+    if not before:
+        return            # 全新快取交給 bootstrap
+    last = max(before)
+    d = scan_date - timedelta(days=1)
+    for _ in range(max_days):
+        iso = d.strftime("%Y-%m-%d")
+        if iso <= last:
+            break
+        if d.weekday() < 5 and iso not in have:
+            day = fetch_market_day(d.strftime("%Y%m%d"))
+            time.sleep(REQUEST_GAP)
+            if day:
+                add_day(cache, iso, day)
+                logger.info("  補漏 %s：%d 檔", iso, len(day))
+        d -= timedelta(days=1)
+
+
 def bootstrap(cache: dict, scan_date: datetime):
     """快取交易日不足時，從掃描日往前回補"""
     have = set(cache.get("days", []))
@@ -251,7 +274,9 @@ def bootstrap(cache: dict, scan_date: datetime):
 # ── 掃描 ─────────────────────────────────────────────────────────
 def scan(cache: dict, date_iso: str, today: Dict[str, dict]) -> List[dict]:
     at_close = datetime.fromisoformat(date_iso).replace(hour=14, minute=30, tzinfo=TZ)
-    hits = []
+    days = [d for d in cache.get("days", []) if d < date_iso]
+    prev_day = days[-1] if days else None
+    hits, skipped = [], 0
     for code, d in today.items():
         if d["amount"] < MIN_DAY_AMT:
             continue
@@ -259,10 +284,16 @@ def scan(cache: dict, date_iso: str, today: Dict[str, dict]) -> List[dict]:
         klines = [{"date": b[0], "close": b[1], "volume": b[2]} for b in bars if b[0] <= date_iso]
         if not klines or klines[-1]["date"] != date_iso:
             continue
+        # 前一根必須是前一個交易日；缺資料（停牌、漏抓）時不評分，避免拿錯的基準比較
+        if len(klines) < 2 or klines[-2]["date"] != prev_day:
+            skipped += 1
+            continue
         ev = evaluate_signal(klines, at_close)
         if ev["qualified"]:
             hits.append({"code": code, "name": d["name"], "ev": ev, "amount": d["amount"]})
     hits.sort(key=lambda h: (h["ev"]["score"], h["ev"]["vol_ratio"]), reverse=True)
+    if skipped:
+        logger.info("前一交易日（%s）缺資料，略過 %d 檔", prev_day, skipped)
     return hits
 
 
@@ -325,6 +356,7 @@ def main():
 
     cache = load_json(CACHE_FILE, {})
     add_day(cache, date_iso, today)
+    fill_gaps(cache, scan_date)
     bootstrap(cache, scan_date)
     save_json(CACHE_FILE, cache)
     journal.backfill(cache)
@@ -356,12 +388,13 @@ def main():
                             format_news_block(result, h["ev"]["pct"]))
         ok = send_telegram(msg) and ok
 
-    if not already:   # 強制重跑不重複記錄
-        for h in hits:   # 摘要裡未查新聞的也記錄（news_verdict = unchecked），方便比較
-            journal.record("market", h["code"], h["name"], slot="close", date=date_iso,
-                           industry=industry.get(h["code"], ""),
-                           price=today[h["code"]]["close"], pct=h["ev"]["pct"], ev=h["ev"],
-                           news=results.get(h["code"]))
+    if already:   # 強制重跑：先刪掉這一天原本的紀錄再重寫，避免重複或保留錯誤資料
+        journal.remove("market", date_iso)
+    for h in hits:   # 摘要裡未查新聞的也記錄（news_verdict = unchecked），方便比較
+        journal.record("market", h["code"], h["name"], slot="close", date=date_iso,
+                       industry=industry.get(h["code"], ""),
+                       price=today[h["code"]]["close"], pct=h["ev"]["pct"], ev=h["ev"],
+                       news=results.get(h["code"]))
 
     if ok:
         state["last_pushed"] = date_iso

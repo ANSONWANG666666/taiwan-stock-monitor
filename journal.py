@@ -94,6 +94,23 @@ def record(source: str, code: str, name: str, *, slot: str = "", price: float = 
         logger.warning("訊號紀錄寫入失敗 %s %s: %s", source, code, e)
 
 
+def remove(source: str, date: str) -> int:
+    """刪除某來源某一天的所有紀錄（重跑時用）；回傳刪除筆數"""
+    path = journal_dir() / f"signals_{source}.csv"
+    if not path.exists():
+        return 0
+    with path.open(encoding="utf-8-sig", newline="") as f:
+        rows = list(csv.DictReader(f))
+    keep = [r for r in rows if r.get("date") != date]
+    if len(keep) != len(rows):
+        with path.open("w", encoding="utf-8-sig", newline="") as f:
+            w = csv.DictWriter(f, fieldnames=FIELDS, extrasaction="ignore")
+            w.writeheader()
+            w.writerows(keep)
+        logger.info("訊號紀錄簿：刪除 %s %s 舊紀錄 %d 筆", source, date, len(rows) - len(keep))
+    return len(rows) - len(keep)
+
+
 def backfill(cache: dict) -> int:
     """用全市場快取回填報酬；回傳本次填了幾個欄位"""
     d = journal_dir()
