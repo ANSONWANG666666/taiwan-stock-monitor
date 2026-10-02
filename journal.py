@@ -37,7 +37,8 @@ FIELDS = [
     "alerts",
     "news_verdict", "news_net", "news_n_relevant", "news_top", "news_top_rumor",
     "ret_5d", "ret_20d", "idx_5d", "idx_20d", "excess_5d", "excess_20d",
-    "industry",   # 新欄位一律加在最後，舊 CSV 才能繼續附加
+    "industry",   # 新欄位一律加在最後；舊 CSV 會在下次寫入時自動補上表頭
+    "sub_industry", "concepts",
 ]
 HORIZONS = (5, 20)
 
@@ -70,9 +71,30 @@ def _ev_fields(ev: Optional[dict]) -> dict:
     }
 
 
+def _migrate_header(path: Path):
+    """舊檔案的表頭少了新欄位時，用新表頭重寫（多出來的值對應回新欄位）"""
+    if not path.exists():
+        return
+    with path.open(encoding="utf-8-sig", newline="") as f:
+        reader = csv.reader(f)
+        header = next(reader, [])
+        rows = list(reader)
+    if header == FIELDS:
+        return
+    fixed = []
+    for row in rows:   # 舊表頭是 FIELDS 的前綴，值的順序一致，直接依位置對應
+        fixed.append({FIELDS[i]: v for i, v in enumerate(row) if i < len(FIELDS)})
+    with path.open("w", encoding="utf-8-sig", newline="") as f:
+        w = csv.DictWriter(f, fieldnames=FIELDS, extrasaction="ignore")
+        w.writeheader()
+        w.writerows(fixed)
+    logger.info("訊號紀錄簿：%s 表頭更新為 %d 欄", path.name, len(FIELDS))
+
+
 def record(source: str, code: str, name: str, *, slot: str = "", price: float = 0.0,
            pct: float = 0.0, ev: Optional[dict] = None, alerts: str = "",
-           news: Optional[dict] = None, date: Optional[str] = None, industry: str = ""):
+           news: Optional[dict] = None, date: Optional[str] = None, industry: str = "",
+           sub_industry: str = "", concepts: str = ""):
     """寫一筆訊號紀錄；任何錯誤都不會影響推播"""
     d = journal_dir()
     if not d.is_dir():
@@ -82,8 +104,10 @@ def record(source: str, code: str, name: str, *, slot: str = "", price: float = 
         row = {"ts": now.isoformat(timespec="seconds"), "date": date or now.strftime("%Y-%m-%d"),
                "source": source, "slot": slot, "code": code, "name": name,
                "price": f"{price:.2f}" if price else "", "pct": f"{pct:.2f}",
-               "alerts": alerts, "industry": industry, **_ev_fields(ev), **_news_fields(news)}
+               "alerts": alerts, "industry": industry, "sub_industry": sub_industry,
+               "concepts": concepts, **_ev_fields(ev), **_news_fields(news)}
         path = d / f"signals_{source}.csv"
+        _migrate_header(path)
         new = not path.exists()
         with path.open("a", encoding="utf-8-sig" if new else "utf-8", newline="") as f:
             w = csv.DictWriter(f, fieldnames=FIELDS, extrasaction="ignore")
@@ -99,6 +123,7 @@ def remove(source: str, date: str) -> int:
     path = journal_dir() / f"signals_{source}.csv"
     if not path.exists():
         return 0
+    _migrate_header(path)
     with path.open(encoding="utf-8-sig", newline="") as f:
         rows = list(csv.DictReader(f))
     keep = [r for r in rows if r.get("date") != date]
@@ -128,6 +153,7 @@ def backfill(cache: dict) -> int:
 
     filled = 0
     for path in sorted(d.glob("signals_*.csv")):
+        _migrate_header(path)
         with path.open(encoding="utf-8-sig", newline="") as f:
             rows = list(csv.DictReader(f))
         changed = False
