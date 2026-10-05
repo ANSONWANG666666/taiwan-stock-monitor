@@ -1,0 +1,63 @@
+name: 型態回測
+
+# 手動執行：Actions → 型態回測 → Run workflow
+# 需要先用 history 工作流程回補歷史日K（data 分支）
+# 結果：本次執行的摘要頁、Telegram 摘要、data 分支 backtest/report.md 與 trades.csv
+on:
+  workflow_dispatch:
+    inputs:
+      years:
+        description: '回測年數'
+        required: false
+        default: '2'
+      stop_before_target:
+        description: '達標前停損：ma20（跌破 20MA 出場）或 none'
+        required: false
+        default: 'ma20'
+      fee_discount:
+        description: '手續費折扣（1 = 無折扣，0.28 = 2.8 折）'
+        required: false
+        default: '1.0'
+
+concurrency:
+  group: backtest
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  backtest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout 程式碼
+        uses: actions/checkout@v4
+
+      - name: Checkout 歷史資料（data 分支）
+        uses: actions/checkout@v4
+        with:
+          ref: data
+          path: data-store
+
+      - name: 設定 Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: 安裝套件
+        run: pip install -r requirements.txt
+
+      - name: 執行回測
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID:   ${{ secrets.TELEGRAM_CHAT_ID }}
+          DATA_DIR: data-store
+          BACKTEST_DIR: data-store/backtest
+          AUTO_COMMIT: '1'
+          BT_YEARS: ${{ github.event.inputs.years }}
+          BT_STOP_BEFORE_TARGET: ${{ github.event.inputs.stop_before_target }}
+          FEE_DISCOUNT: ${{ github.event.inputs.fee_discount }}
+          PYTHONUNBUFFERED: '1'
+        run: python backtest.py

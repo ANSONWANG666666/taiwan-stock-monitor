@@ -71,6 +71,7 @@ class Config:
     # ── 回測 ──────────────────────────────────────────────────────
     BT_YEARS: float = 2.0
     BT_IN_SAMPLE_MONTHS: int = 16     # 前 16 個月樣本內、其後為樣本外驗證
+    BT_STOP_BEFORE_TARGET: str = "ma20"   # 達標前的停損：ma20（收盤跌破 20MA 全數出場）或 none（只靠最長持有天數）
 
     # ── 模組二：盤中即時監控（TWSE 即時行情快照，免券商帳戶）──
     RT_EVERY_SEC: int = 20            # 輪詢間隔（秒）；證交所約每 5 秒更新一次，太密會被暫時封鎖
@@ -91,6 +92,8 @@ class Config:
             setattr(self, f.name, _env(f.name, getattr(self, f.name)))
         if self.A_MODE not in ("rally", "amplitude"):
             raise ValueError(f"A_MODE 必須是 rally 或 amplitude，收到 {self.A_MODE}")
+        if self.BT_STOP_BEFORE_TARGET not in ("ma20", "none"):
+            raise ValueError(f"BT_STOP_BEFORE_TARGET 必須是 ma20 或 none，收到 {self.BT_STOP_BEFORE_TARGET}")
 
     @property
     def buy_cost(self) -> float:
