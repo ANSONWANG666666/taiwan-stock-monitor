@@ -28,11 +28,18 @@ permissions:
 jobs:
   scan:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
 
     steps:
       - name: Checkout 程式碼
         uses: actions/checkout@v4
+
+      - name: Checkout 歷史資料（data 分支）
+        uses: actions/checkout@v4
+        continue-on-error: true
+        with:
+          ref: data
+          path: data-store
 
       - name: Checkout 訊號紀錄簿（journal 分支）
         uses: actions/checkout@v4
@@ -73,6 +80,17 @@ jobs:
           FORCE_SCAN:         ${{ github.event.inputs.force }}
           MAX_DETAIL:         '10'
         run: python market_scan.py
+
+      - name: 更新歷史日K
+        if: always()
+        continue-on-error: true
+        env:
+          DATA_DIR: data-store
+          AUTO_COMMIT: '1'
+          SCAN_DATE: ${{ github.event.inputs.scan_date }}
+        run: |
+          [ -d data-store/.git ] || { echo "尚未建立 data 分支，略過"; exit 0; }
+          python history.py update ${SCAN_DATE:+--date $SCAN_DATE}
       # 訊號紀錄簿存在 journal 分支；失敗會重試，不影響推播
       - name: 儲存訊號紀錄
         if: always()

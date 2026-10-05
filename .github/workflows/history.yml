@@ -1,0 +1,65 @@
+name: 台股歷史資料
+
+# 第一次使用：手動執行 mode=backfill（上市＋上櫃 2 年，約 1 小時，每回補完一個月就提交一次，
+#             中途逾時重跑會從斷點繼續）
+# 確認上櫃格式：mode=probe、date 填一個交易日
+# 每日更新已併入「台股全市場掃描」，不需要另外排程
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'backfill（回補）／ update（更新指定日）／ probe（檢查資料源格式）'
+        required: true
+        default: 'backfill'
+      months:
+        description: '回補幾個月'
+        required: false
+        default: '24'
+      date:
+        description: 'update／probe 用的日期 YYYYMMDD'
+        required: false
+        default: ''
+
+concurrency:
+  group: history-data
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  history:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+
+    steps:
+      - name: Checkout 程式碼
+        uses: actions/checkout@v4
+
+      - name: Checkout 歷史資料（data 分支）
+        uses: actions/checkout@v4
+        with:
+          ref: data
+          path: data-store
+
+      - name: 設定 Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: 安裝套件
+        run: pip install -r requirements.txt
+
+      - name: 執行
+        env:
+          DATA_DIR: data-store
+          AUTO_COMMIT: '1'
+          PYTHONUNBUFFERED: '1'
+        run: |
+          case "${{ github.event.inputs.mode }}" in
+            backfill) python history.py backfill --months "${{ github.event.inputs.months }}" ;;
+            update)   python history.py update ${{ github.event.inputs.date && format('--date {0}', github.event.inputs.date) || '' }} ;;
+            probe)    python history.py probe "${{ github.event.inputs.date }}" ;;
+            *) echo "未知的 mode"; exit 1 ;;
+          esac
