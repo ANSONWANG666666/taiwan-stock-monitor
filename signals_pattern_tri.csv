@@ -1,0 +1,6 @@
+﻿ts,date,source,slot,code,name,price,pct,score,vol_ratio,breakout,strong_vol,near_low,rise_from_low,streak,alerts,news_verdict,news_net,news_n_relevant,news_top,news_top_rumor,ret_5d,ret_20d,idx_5d,idx_20d,excess_5d,excess_20d,industry,sub_industry,concepts
+2026-10-06T00:04:27+08:00,2026-10-05,pattern_tri,進場,2308,台達電,2005.00,0.00,,,,,,,,上升三角整理 60 天，今日帶量 1.6 倍突破上緣,unchecked,,,,,,,,,,,電子零組件,,
+2026-10-06T00:04:27+08:00,2026-10-05,pattern_tri,進場,2328,廣宇,48.30,0.00,,,,,,,,上升三角整理 60 天，今日帶量 1.8 倍突破上緣,unchecked,,,,,,,,,,,電子零組件,,
+2026-10-06T00:04:27+08:00,2026-10-05,pattern_tri,進場,2476,鉅祥,128.50,0.00,,,,,,,,上升三角整理 60 天，今日帶量 1.8 倍突破上緣,unchecked,,,,,,,,,,,電子零組件,,
+2026-10-06T00:04:27+08:00,2026-10-05,pattern_tri,進場,3338,泰碩,70.10,0.00,,,,,,,,上升三角整理 60 天，今日帶量 2.0 倍突破上緣,unchecked,,,,,,,,,,,電子零組件,,
+2026-10-06T00:04:27+08:00,2026-10-05,pattern_tri,進場,5469,瀚宇博,78.40,0.00,,,,,,,,上升三角整理 60 天，今日帶量 3.5 倍突破上緣,unchecked,,,,,,,,,,,電子零組件,,
