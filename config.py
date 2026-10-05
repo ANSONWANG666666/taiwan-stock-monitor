@@ -72,6 +72,8 @@ class Config:
     BT_YEARS: float = 2.0
     BT_IN_SAMPLE_MONTHS: int = 16     # 前 16 個月樣本內、其後為樣本外驗證
     BT_STOP_BEFORE_TARGET: str = "ma20"   # 達標前的停損：ma20（收盤跌破 20MA 全數出場）或 none（只靠最長持有天數）
+    BT_MAX_POSITIONS: int = 10        # 資金帳戶模擬：同時最多持有幾檔（每檔投入當時資產的 1/N）
+    BT_TOP_N: int = 3                 # 濾網「每日前 N 檔」：每天每種型態只取分數最高的 N 檔
 
     # ── 每日推播：哪些型態列進場、用哪些濾網（依 2 年回測結果）──
     ACTIVE_PATTERNS: str = "三角收斂"  # 列進場建議的型態（逗號分隔）；其餘只列「觀察用」
