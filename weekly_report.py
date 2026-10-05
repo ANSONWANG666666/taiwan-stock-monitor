@@ -34,7 +34,9 @@ TZ = ZoneInfo("Asia/Taipei")
 MIN_SAMPLE = int(os.environ.get("MIN_SAMPLE", "30"))
 STATE_FILE = Path("weekly_state.json")   # 防止備援排程重複推播
 
-SOURCE_LABEL = {"market": "全市場掃描", "screener": "盤中選股", "monitor": "大單監控"}
+SOURCE_LABEL = {"market": "全市場掃描", "screener": "盤中選股", "monitor": "大單監控",
+                "pattern_tri": "型態：三角收斂", "pattern_chuaner": "型態：穿山二龍（觀察）",
+                "pattern_hfw": "型態：黑飛舞（觀察）"}
 VERDICT_LABEL = {
     "confirmed_positive": "✅ 證實利多",
     "confirmed_negative": "🔻 證實利空",
@@ -136,7 +138,8 @@ def build_report(rows: List[dict], today: datetime) -> str:
                          {"3": "3/3 分", "2": "2/3 分"})
 
     lines.append("\n📡 <b>依訊號來源</b>")
-    lines += group_lines(rows, lambda r: r["source"], ["market", "screener", "monitor"], SOURCE_LABEL)
+    lines += group_lines(rows, lambda r: r["source"], ["market", "screener", "monitor", "pattern_tri", "pattern_chuaner", "pattern_hfw"],
+                         SOURCE_LABEL)
 
     recent = [r for r in rows if _f(r.get("excess_5d")) is not None]
     recent.sort(key=lambda r: r["date"], reverse=True)
