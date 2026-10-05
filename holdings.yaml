@@ -1,0 +1,27 @@
+# 目前持股（自己維護）。在 GitHub 網頁上編輯：Add / 修改後按 Commit changes。
+#
+# 用途：
+#   1. 黑飛舞訊號：已持有的股票會標成「加碼」而不是「進場」
+#   2. 出場提醒（exit_manager.py）：依策略與進場日自動判斷
+#
+# 欄位：
+#   code         股票代號（字串，加引號）
+#   name         名稱（可省略）
+#   strategy     黑飛舞 / 穿山二龍 / 三角收斂
+#   entry_date   進場日 YYYY-MM-DD
+#   entry_price  進場價
+#   sold_half    達標後已賣出一半就改成 true（可省略，預設 false）
+#   以下可省略，省略時程式會用進場日的型態自動計算：
+#   base         目標價基準（穿二站回 20MA 收盤／三角突破價）
+#   a_rally      第 1 階段漲幅（例如 0.35）
+#   a_amp        型態振幅
+#
+# 範例（刪掉開頭的 # 就會生效）：
+# holdings:
+#   - code: "3013"
+#     name: 晟銘電
+#     strategy: 黑飛舞
+#     entry_date: 2026-10-06
+#     entry_price: 95.2
+
+holdings: []
