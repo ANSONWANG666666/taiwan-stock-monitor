@@ -72,6 +72,20 @@ class Config:
     BT_YEARS: float = 2.0
     BT_IN_SAMPLE_MONTHS: int = 16     # 前 16 個月樣本內、其後為樣本外驗證
 
+    # ── 模組二：盤中即時監控（TWSE 即時行情快照，免券商帳戶）──
+    RT_EVERY_SEC: int = 20            # 輪詢間隔（秒）；證交所約每 5 秒更新一次，太密會被暫時封鎖
+    RT_MAX_WATCH: int = 80            # 最多監控幾檔（持股 > 候選 > 觀察名單）
+    RT_LARGE_LOTS: int = 500          # 單筆 ≥ 此張數算大單
+    RT_LARGE_AMT_SMALL: float = 3e6   # 單筆金額門檻：20 日均成交值 < 1 億
+    RT_LARGE_AMT_MID: float = 5e6     #               1～10 億
+    RT_LARGE_AMT_BIG: float = 1e7     #               ≥ 10 億
+    RT_NET_WINDOW_MIN: int = 5        # 大單淨買統計窗口（分鐘）
+    RT_BAR_MIN: int = 5               # 量能比較用的 K 棒長度（分鐘）
+    RT_BREAK_VOL: float = 3.0         # 突破時 5 分量 > 前面 5 分K 平均的 N 倍
+    RT_TOUCH_PCT: float = 0.01        # 拉回／回測均線的距離
+    RT_MIN_ELAPSED_MIN: int = 30      # 開盤 N 分鐘後才用「預估全日量」判斷量縮
+    RT_COOLDOWN_MIN: int = 30         # 同一檔同一訊號 N 分鐘內不重複
+
     def __post_init__(self):
         for f in fields(self):
             setattr(self, f.name, _env(f.name, getattr(self, f.name)))

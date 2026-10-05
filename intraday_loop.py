@@ -6,6 +6,7 @@ GitHub 的排程很不可靠：每 5 分鐘的排程常常整天只跑一兩次�
 這支程式只需要開盤前被觸發「一次」，之後在同一個執行裡持續工作到收盤後：
 
   09:00–13:35  每 5 分鐘執行一次大單監控（stock_check_once.main）
+  09:00–13:30  每 20 秒盤中即時監控（realtime_monitor：昨天收盤後選出的持股／候選／觀察名單）
   09:30        盤中選股：早盤觀察
   13:00        盤中選股：中場更新
   13:20        出場提醒：持有黑飛舞且今天是 Day 2 → 用即時最高價先判斷（holdings.yaml）
@@ -35,6 +36,8 @@ MONITOR_START = (9, 0)
 MONITOR_END = (13, 35)
 MONITOR_EVERY = timedelta(minutes=int(os.environ.get("MONITOR_EVERY_MIN", "5")))
 SCREENER_SLOTS = [("0930", (9, 30)), ("1300", (13, 0)), ("1400", (13, 50))]
+RT_END = (13, 30)
+RT_EVERY = timedelta(seconds=int(os.environ.get("RT_EVERY_SEC", "20")))
 EXIT_CHECK = (13, 20)          # 13:20～13:30 之間做一次，來得及在收盤前賣
 HARD_END = (14, 10)
 TICK = 20   # 秒
@@ -67,6 +70,11 @@ def run_screener(slot: str):
         os.environ.pop("SCREENER_SLOT", None)
 
 
+def run_realtime():
+    import realtime_monitor      # 延後載入，失敗也不影響大單監控
+    realtime_monitor.tick()
+
+
 def run_exit_check():
     import exit_manager          # 需要 pandas/yaml；延後載入，失敗也不影響大單監控
     exit_manager.intraday_check()
@@ -93,6 +101,8 @@ def main():
 
     mon_start, mon_end = at(start, MONITOR_START), at(start, MONITOR_END)
     next_monitor = max(mon_start, start)
+    next_rt = max(mon_start, start)
+    rt_end = at(start, RT_END)
     done = set()
     checked_open = False
     logger.info("=== 盤中監控啟動（台灣時間 %s）===", start.strftime("%H:%M"))
@@ -113,6 +123,10 @@ def main():
             safe("大單監控", stock_check_once.main)
             while next_monitor <= t:
                 next_monitor += MONITOR_EVERY
+
+        if mon_start <= t <= rt_end and t >= next_rt:
+            safe("盤中即時監控", run_realtime)
+            next_rt = t + RT_EVERY
 
         for slot, hm in SCREENER_SLOTS:
             if slot in done or t < at(t, hm):

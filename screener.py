@@ -62,6 +62,7 @@ def prepare(df: pd.DataFrame) -> SimpleNamespace:
     return SimpleNamespace(
         n=len(df), date=df["date"].tolist(), code=str(df["code"].iloc[0]) if len(df) else "",
         name=str(df["name"].iloc[-1]) if len(df) else "",
+        market=str(df["market"].iloc[-1]) if len(df) and "market" in df else "",
         o=df["adj_open"].to_numpy(float), h=h, l=df["adj_low"].to_numpy(float), c=c, v=v,
         raw_o=df["open"].to_numpy(float), raw_h=df["high"].to_numpy(float),
         raw_l=df["low"].to_numpy(float), raw_c=raw_close, prev_ref=prev_ref,
@@ -80,15 +81,9 @@ def _ok(*vals) -> bool:
 
 
 # ── 穿山二龍 ─────────────────────────────────────────────────────
-def detect_chuaner(S, i: int, cfg: Config = CFG) -> Optional[dict]:
-    """i 為「第 3 階段：帶量紅K站回 20MA」那一天"""
-    if i < cfg.CHUANER_LOOKBACK + 25 or not _ok(S.ma20[i], S.ma20[i - 1]):
-        return None
-    # 第 3 階段：今天站回 20MA，且是 ≥3% 實體紅K 或漲停
-    if not (S.c[i] > S.ma20[i] and S.c[i - 1] <= S.ma20[i - 1]):
-        return None
-    strong = (S.c[i] > S.o[i] and S.pct[i] >= cfg.CHUANER_STAGE3_PCT) or S.limit_up[i]
-    if not strong:
+def _chuaner_stage12(S, i: int, cfg: Config = CFG) -> Optional[dict]:
+    """檢查 i 之前（不含 i）已完成第 1、2 階段：i 可以是今天（盤後）或明天（盤中監控用 i = n）"""
+    if i - 1 < 0 or not _ok(S.ma20[i - 1]) or S.c[i - 1] > S.ma20[i - 1]:
         return None
     # 第 2 階段：找出這段「收在 20MA 之下」的起點，必須在 N 天內
     b = i - 1
@@ -112,6 +107,23 @@ def detect_chuaner(S, i: int, cfg: Config = CFG) -> Optional[dict]:
     if not (_ok(S.ma5[hi_idx], S.ma10[hi_idx], S.ma20[hi_idx])
             and S.ma5[hi_idx] > S.ma10[hi_idx] > S.ma20[hi_idx]):
         return None
+    return {"b": b, "hi_idx": hi_idx, "lo_idx": lo_idx, "rally": float(rally)}
+
+
+def detect_chuaner(S, i: int, cfg: Config = CFG) -> Optional[dict]:
+    """i 為「第 3 階段：帶量紅K站回 20MA」那一天"""
+    if i < cfg.CHUANER_LOOKBACK + 25 or not _ok(S.ma20[i], S.ma20[i - 1]):
+        return None
+    # 第 3 階段：今天站回 20MA，且是 ≥3% 實體紅K 或漲停
+    if not (S.c[i] > S.ma20[i] and S.c[i - 1] <= S.ma20[i - 1]):
+        return None
+    strong = (S.c[i] > S.o[i] and S.pct[i] >= cfg.CHUANER_STAGE3_PCT) or S.limit_up[i]
+    if not strong:
+        return None
+    st = _chuaner_stage12(S, i, cfg)
+    if not st:
+        return None
+    b, hi_idx, lo_idx, rally = st["b"], st["hi_idx"], st["lo_idx"], st["rally"]
     pull_low = float(np.min(S.l[hi_idx:i + 1]))
     return {
         "pattern": "穿山二龍",
@@ -333,10 +345,80 @@ def load_holdings() -> List[dict]:
     return [h for h in (data.get("holdings") or []) if h and h.get("code")]
 
 
+# ── 給盤中即時監控（模組二）的觀察名單 ───────────────────────────
+def live_context(S) -> dict:
+    """明天盤中要用的數字：用今天以前的收盤和即時價就能算出當下的 5／10／20MA"""
+    i = S.n - 1
+    c, v = S.c, S.v
+    return {
+        "prev_close": float(S.raw_c[i]),
+        "sum4": float(np.sum(c[max(0, i - 3):i + 1])), "sum9": float(np.sum(c[max(0, i - 8):i + 1])),
+        "sum19": float(np.sum(c[max(0, i - 18):i + 1])),
+        "ma5_prev": float(S.ma5[i]) if _ok(S.ma5[i]) else None,
+        "ma20_prev": float(S.ma20[i]) if _ok(S.ma20[i]) else None,
+        "above20": bool(_ok(S.ma20[i]) and c[i] > S.ma20[i]),
+        "vol20": float(np.mean(v[max(0, i - 19):i + 1])),                 # 張
+        "amount20": float(np.mean(S.amount[max(0, i - 19):i + 1])),
+    }
+
+
+def watch_tags(S, cfg: Config = CFG) -> Dict[str, dict]:
+    """明天可能在盤中出現訊號的型態（尚未成立，只是「等待中」）"""
+    i, nxt = S.n - 1, S.n
+    tags: Dict[str, dict] = {}
+    # 黑飛舞：Day 0 已出現，明天仍在 Day 1 窗口內，且尚未失效、尚未出過 Day 1
+    for d0 in range(i, max(0, nxt - cfg.HFW_WINDOW) - 1, -1):
+        if not _hfw_day0(S, d0, cfg):
+            continue
+        broken = any(_ok(S.ma5[k]) and S.c[k] < S.ma5[k] for k in range(d0 + 1, i + 1))
+        done = any(_hfw_day1_ok(S, k, d0, cfg) for k in range(d0 + 1, i + 1))
+        if not broken and not done:
+            tags["黑飛舞"] = {"day0": S.date[d0], "day0_volume": float(S.v[d0])}
+        break
+    # 穿山二龍：第 1、2 階段完成，等明天站回 20MA
+    if nxt >= cfg.CHUANER_LOOKBACK + 25:
+        st = _chuaner_stage12(S, nxt, cfg)
+        if st:
+            tags["穿山二龍"] = {"rally": st["rally"], "break_date": S.date[st["b"]]}
+    # 三角收斂：收斂中、尚未突破；記下明天的上緣價位
+    if nxt >= cfg.TRI_MIN_BARS + 25:
+        t = find_triangle(S, nxt, cfg)
+        if t and S.c[i] <= t["upper_now"]:
+            tags["三角收斂"] = {"upper": t["upper_now"], "kind": t["kind"], "bars": t["bars"]}
+    return tags
+
+
+def build_watch(series: Dict[str, SimpleNamespace], stock_groups: Dict[str, List[str]],
+                cands: List[dict], held: Dict[str, SimpleNamespace], cfg: Config = CFG) -> Dict[str, dict]:
+    """持股 > 今天的候選 > 強勢族群裡等待中的型態；最多 RT_MAX_WATCH 檔"""
+    out: Dict[str, dict] = {}
+
+    def add(code, S, prio, groups, tags):
+        w = out.get(code)
+        if w:
+            w["tags"].update(tags)
+            w["prio"] = min(w["prio"], prio)
+            return
+        out[code] = {"name": S.name, "market": S.market, "groups": groups, "prio": prio,
+                     "tags": dict(tags), "ctx": live_context(S)}
+
+    for code, S in held.items():
+        add(code, S, 0, stock_groups.get(code, []), {"持股": {}} | watch_tags(S, cfg))
+    for s in cands:
+        add(s["code"], series[s["code"]], 1, s["groups"], {"候選": {"pattern": s["pattern"], "score": s["score"]}})
+    for code, groups in stock_groups.items():
+        tags = watch_tags(series[code], cfg)
+        if tags:
+            add(code, series[code], 2, groups, tags)
+    ranked = sorted(out.items(), key=lambda kv: (kv[1]["prio"], -kv[1]["ctx"]["amount20"]))
+    return dict(ranked[:cfg.RT_MAX_WATCH])
+
+
 # ── 主流程 ───────────────────────────────────────────────────────
 def screen(df: pd.DataFrame, industry: Dict[str, dict], leader_state: dict,
            held: set, cfg: Config = CFG) -> dict:
     df = history.adjust(df)
+    held_series = {c: prepare(g) for c, g in df[df["code"].isin(held)].groupby("code") if len(g) >= 20}
     last_date = df["date"].max()
     taiex = prepare(df[df["code"] == INDEX_CODE]) if (df["code"] == INDEX_CODE).any() else None
     series: Dict[str, SimpleNamespace] = {}
@@ -407,7 +489,8 @@ def screen(df: pd.DataFrame, industry: Dict[str, dict], leader_state: dict,
                            + 5 * max(strength[g]["strong_n"] / strength[g]["n"] for g in s["groups"]), 1)
         kept.append(s)
     kept.sort(key=lambda s: s["score"], reverse=True)
-    return {"date": last_date, "candidates": kept, "rotations": rotations,
+    watch = build_watch(series, stock_groups, kept, held_series, cfg)
+    return {"date": last_date, "candidates": kept, "rotations": rotations, "watch": watch,
             "strong_groups": {g: strength[g] | {"leader": leaders.get(g)} for g in strong_groups},
             "n_universe": len(series)}
 
@@ -440,6 +523,13 @@ def format_report(res: dict) -> str:
                 lines.append(f"　  目標價：漲幅法 {t['rally'] * ratio:.2f}／振幅法 {t['amp'] * ratio:.2f}")
     if not c:
         lines.append("\n今天沒有符合型態的股票。")
+    w = res.get("watch") or {}
+    if w:
+        cnt = {}
+        for x in w.values():
+            for tag in x["tags"]:
+                cnt[tag] = cnt.get(tag, 0) + 1
+        lines.append(f"\n👀 明天盤中即時監控 {len(w)} 檔（" + "、".join(f"{k} {v}" for k, v in cnt.items()) + "）")
     lines.append("\n<i>只推播不下單；目標價依 A_MODE 兩種算法列出，請自行判斷。</i>")
     return "\n".join(lines)
 
@@ -460,7 +550,8 @@ def main():
     res = screen(df, industry, leader_state, held)
     LEADER_FILE.write_text(json.dumps(leader_state, ensure_ascii=False, indent=1), encoding="utf-8")
     CANDIDATES_FILE.write_text(json.dumps(res, ensure_ascii=False, indent=1, default=float), encoding="utf-8")
-    logger.info("候選 %d 檔、強勢族群 %d 個", len(res["candidates"]), len(res["strong_groups"]))
+    logger.info("候選 %d 檔、強勢族群 %d 個、明日盤中觀察 %d 檔",
+                len(res["candidates"]), len(res["strong_groups"]), len(res["watch"]))
     for s in res["candidates"]:
         logger.info("  %s %s %s %s %.1f", s["code"], s["name"], s["pattern"], s["entry_type"], s["score"])
     send_telegram(format_report(res))
