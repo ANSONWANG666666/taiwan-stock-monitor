@@ -62,8 +62,9 @@ def test_config_env_override(monkeypatch):
 
 def test_config_costs():
     c = config.Config()
-    assert c.buy_cost == pytest.approx(0.001425 + 0.001)
-    assert c.sell_cost == pytest.approx(0.001425 + 0.003 + 0.001)
+    assert c.FEE_DISCOUNT == 0.6                                   # 網路下單 6 折
+    assert c.buy_cost == pytest.approx(0.001425 * 0.6 + 0.001)
+    assert c.sell_cost == pytest.approx(0.001425 * 0.6 + 0.003 + 0.001)
 
 
 # ── 歷史資料解析 ─────────────────────────────────────────────────
