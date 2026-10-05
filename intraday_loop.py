@@ -8,6 +8,7 @@ GitHub 的排程很不可靠：每 5 分鐘的排程常常整天只跑一兩次�
   09:00–13:35  每 5 分鐘執行一次大單監控（stock_check_once.main）
   09:30        盤中選股：早盤觀察
   13:00        盤中選股：中場更新
+  13:20        出場提醒：持有黑飛舞且今天是 Day 2 → 用即時最高價先判斷（holdings.yaml）
   13:50        盤中選股：收盤確認
   做完 13:50 那次就結束；最晚 14:10 結束
 
@@ -34,6 +35,7 @@ MONITOR_START = (9, 0)
 MONITOR_END = (13, 35)
 MONITOR_EVERY = timedelta(minutes=int(os.environ.get("MONITOR_EVERY_MIN", "5")))
 SCREENER_SLOTS = [("0930", (9, 30)), ("1300", (13, 0)), ("1400", (13, 50))]
+EXIT_CHECK = (13, 20)          # 13:20～13:30 之間做一次，來得及在收盤前賣
 HARD_END = (14, 10)
 TICK = 20   # 秒
 
@@ -63,6 +65,11 @@ def run_screener(slot: str):
         stock_screener.main()
     finally:
         os.environ.pop("SCREENER_SLOT", None)
+
+
+def run_exit_check():
+    import exit_manager          # 需要 pandas/yaml；延後載入，失敗也不影響大單監控
+    exit_manager.intraday_check()
 
 
 def safe(name: str, fn, *args):
@@ -115,6 +122,12 @@ def main():
                 logger.info("— 盤中選股 %s —", slot)
                 safe(f"盤中選股 {slot}", run_screener, slot)
             done.add(slot)
+
+        if "exit" not in done and t >= at(t, EXIT_CHECK):
+            if t < at(t, EXIT_CHECK) + timedelta(minutes=10):
+                logger.info("— 出場提醒（黑飛舞 Day 2）—")
+                safe("出場提醒", run_exit_check)
+            done.add("exit")
 
         if "1400" in done:
             break
