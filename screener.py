@@ -27,6 +27,7 @@ import pandas as pd
 import yaml
 
 import history
+import journal
 from config import CFG, Config
 from notifier import send_telegram
 from tw_market_utils import is_limit_up, is_locked_limit_up, limit_up
@@ -276,14 +277,19 @@ def load_groups(industry: Dict[str, dict]) -> Dict[str, List[str]]:
     return groups
 
 
-def group_strength(groups: Dict[str, List[str]], snap: Dict[str, dict], cfg: Config = CFG) -> Dict[str, dict]:
-    """snap[code] = {above20, rs5}；強勢族群：≥4 檔且 ≥30% 站上 20MA 或 5 日跑贏大盤"""
+def group_strength(groups: Dict[str, List[str]], snap: Dict[str, dict], cfg: Config = CFG,
+                   strict: bool = False) -> Dict[str, dict]:
+    """snap[code] = {above20, rs5}；強勢族群：≥4 檔且 ≥30% 成員「站上 20MA 或 5 日跑贏大盤」
+    strict=True（族群從嚴）：成員要「站上 20MA 而且 5 日跑贏大盤」"""
     out = {}
     for g, codes in groups.items():
         members = [c for c in codes if c in snap]
         if len(members) < cfg.GROUP_MIN_MEMBERS:
             continue
-        k = sum(1 for c in members if snap[c]["above20"] or snap[c]["rs5"] > 0)
+        if strict:
+            k = sum(1 for c in members if snap[c]["above20"] and snap[c]["rs5"] > 0)
+        else:
+            k = sum(1 for c in members if snap[c]["above20"] or snap[c]["rs5"] > 0)
         out[g] = {"n": len(members), "strong_n": k,
                   "strong": k >= cfg.GROUP_MIN_STRONG and k / len(members) >= cfg.GROUP_MIN_RATIO}
     return out
@@ -362,8 +368,8 @@ def live_context(S) -> dict:
     }
 
 
-def watch_tags(S, cfg: Config = CFG) -> Dict[str, dict]:
-    """明天可能在盤中出現訊號的型態（尚未成立，只是「等待中」）"""
+def watch_tags(S, cfg: Config = CFG, patterns: Optional[tuple] = None) -> Dict[str, dict]:
+    """明天可能在盤中出現訊號的型態（尚未成立，只是「等待中」）；patterns 限定型態（預設全部）"""
     i, nxt = S.n - 1, S.n
     tags: Dict[str, dict] = {}
     # 黑飛舞：Day 0 已出現，明天仍在 Day 1 窗口內，且尚未失效、尚未出過 Day 1
@@ -385,6 +391,8 @@ def watch_tags(S, cfg: Config = CFG) -> Dict[str, dict]:
         t = find_triangle(S, nxt, cfg)
         if t and S.c[i] <= t["upper_now"]:
             tags["三角收斂"] = {"upper": t["upper_now"], "kind": t["kind"], "bars": t["bars"]}
+    if patterns is not None:
+        tags = {k: v for k, v in tags.items() if k in patterns}
     return tags
 
 
@@ -402,16 +410,44 @@ def build_watch(series: Dict[str, SimpleNamespace], stock_groups: Dict[str, List
         out[code] = {"name": S.name, "market": S.market, "groups": groups, "prio": prio,
                      "tags": dict(tags), "ctx": live_context(S)}
 
+    active = cfg.active_patterns                      # 盤中只盯列進場的型態；觀察用的不盯
     for code, S in held.items():
-        add(code, S, 0, stock_groups.get(code, []), {"持股": {}} | watch_tags(S, cfg))
+        add(code, S, 0, stock_groups.get(code, []), {"持股": {}} | watch_tags(S, cfg, active))
     for s in cands:
         add(s["code"], series[s["code"]], 1, s["groups"], {"候選": {"pattern": s["pattern"], "score": s["score"]}})
     for code, groups in stock_groups.items():
-        tags = watch_tags(series[code], cfg)
+        tags = watch_tags(series[code], cfg, active)
         if tags:
             add(code, series[code], 2, groups, tags)
     ranked = sorted(out.items(), key=lambda kv: (kv[1]["prio"], -kv[1]["ctx"]["amount20"]))
     return dict(ranked[:cfg.RT_MAX_WATCH])
+
+
+def split_signals(kept: List[dict], strict_groups: set, market_ok: bool, cfg: Config = CFG):
+    """依回測結果分流：
+    · 列進場：ACTIVE_PATTERNS 的型態，且（族群從嚴）、（大盤在 20MA 之上），每種型態取分數前 N 檔
+    · 觀察用：其他型態（回測不佳），只列名稱
+    回傳 (進場, 觀察, 被濾網擋下的檔數說明)"""
+    active = cfg.active_patterns
+    entries, observe = [], []
+    held_back = {"market": 0, "group": 0, "top_n": 0}
+    count: Dict[str, int] = {}
+    for s in kept:                                    # kept 已依分數排序
+        if s["pattern"] not in active:
+            observe.append(s)
+            continue
+        if cfg.SCREEN_STRICT_GROUP and not any(g in strict_groups for g in s["groups"]):
+            held_back["group"] += 1
+            continue
+        if cfg.SCREEN_MARKET_FILTER and not market_ok:
+            held_back["market"] += 1
+            continue
+        if count.get(s["pattern"], 0) >= cfg.SCREEN_TOP_N:
+            held_back["top_n"] += 1
+            continue
+        count[s["pattern"]] = count.get(s["pattern"], 0) + 1
+        entries.append(s)
+    return entries, observe, held_back
 
 
 # ── 主流程 ───────────────────────────────────────────────────────
@@ -437,7 +473,10 @@ def screen(df: pd.DataFrame, industry: Dict[str, dict], leader_state: dict,
         snap[code] = {"above20": bool(_ok(S.ma20[i]) and S.c[i] > S.ma20[i]), "rs5": rs5}
     groups = load_groups(industry)
     strength = group_strength(groups, snap, cfg)
+    strict = group_strength(groups, snap, cfg, strict=True)
     strong_groups = {g: [c for c in groups[g] if c in series] for g, s in strength.items() if s["strong"]}
+    strict_groups = {g for g, s in strict.items() if s["strong"]}
+    market_ok = bool(taiex is not None and _ok(taiex.ma20[-1]) and taiex.c[-1] > taiex.ma20[-1])
     stock_groups: Dict[str, List[str]] = {}
     for g, codes in strong_groups.items():
         for c in codes:
@@ -489,28 +528,39 @@ def screen(df: pd.DataFrame, industry: Dict[str, dict], leader_state: dict,
                            + 5 * max(strength[g]["strong_n"] / strength[g]["n"] for g in s["groups"]), 1)
         kept.append(s)
     kept.sort(key=lambda s: s["score"], reverse=True)
-    watch = build_watch(series, stock_groups, kept, held_series, cfg)
-    return {"date": last_date, "candidates": kept, "rotations": rotations, "watch": watch,
+    entries, observe, held_back = split_signals(kept, strict_groups, market_ok, cfg)
+    watch_groups = {c: gs for c, gs in stock_groups.items() if any(g in strict_groups for g in gs)} \
+        if cfg.SCREEN_STRICT_GROUP else stock_groups
+    watch = build_watch(series, watch_groups, entries, held_series, cfg) \
+        if (market_ok or not cfg.SCREEN_MARKET_FILTER) else build_watch(series, {}, [], held_series, cfg)
+    return {"date": last_date, "candidates": entries, "observe": observe, "held_back": held_back,
+            "market_ok": market_ok, "rotations": rotations, "watch": watch,
             "strong_groups": {g: strength[g] | {"leader": leaders.get(g)} for g in strong_groups},
             "n_universe": len(series)}
 
 
-def format_report(res: dict) -> str:
+def format_report(res: dict, cfg: Config = CFG) -> str:
     c = res["candidates"]
+    obs = res.get("observe") or []
+    hb = res.get("held_back") or {}
+    active = "、".join(cfg.active_patterns)
     sg = sorted(res["strong_groups"].items(), key=lambda kv: kv[1]["strong_n"] / kv[1]["n"], reverse=True)
     lines = [f"🎯 <b>型態選股｜{res['date']}</b>",
-             f"可交易 {res['n_universe']} 檔 → 強勢族群 {len(sg)} 個 → <b>候選 {len(c)} 檔</b>"]
+             f"可交易 {res['n_universe']} 檔 → 強勢族群 {len(sg)} 個 → <b>進場候選 {len(c)} 檔</b>（{active}）"]
+    if cfg.SCREEN_MARKET_FILTER:
+        lines.append("📈 大盤在 20MA 之上" if res.get("market_ok") else
+                     "📉 <b>大盤在 20MA 之下：今天不列進場</b>（回測顯示此時進場勝率較差）")
     if sg:
         lines.append("\n🔥 <b>強勢族群</b>（強勢檔數／成員）")
         lines.append("、".join(f"{html.escape(g)} {s['strong_n']}／{s['n']}" for g, s in sg[:8]))
     for r in res["rotations"]:
         lines.append(f"🔄 {html.escape(r)}")
-    for pat in ("黑飛舞", "穿山二龍", "三角收斂"):
+    for pat in cfg.active_patterns:
         rows = [s for s in c if s["pattern"] == pat]
         if not rows:
             continue
         lines.append(f"\n<b>{pat}</b>")
-        for s in rows[:12]:
+        for s in rows:
             tag = "👑" if s.get("leader_of") else "•"
             act = f"【{s['action']}】" if s.get("action") else ""
             line = (f"{tag} {html.escape(s['name'])} {s['code']}　{act}{s['entry_type']} {s['price']:.2f}"
@@ -522,16 +572,54 @@ def format_report(res: dict) -> str:
                 t = s["targets"]
                 lines.append(f"　  目標價：漲幅法 {t['rally'] * ratio:.2f}／振幅法 {t['amp'] * ratio:.2f}")
     if not c:
-        lines.append("\n今天沒有符合型態的股票。")
+        lines.append("\n今天沒有列進場的股票。")
+    skipped = []
+    if hb.get("group"):
+        skipped.append(f"族群不夠強 {hb['group']} 檔")
+    if hb.get("market"):
+        skipped.append(f"大盤濾網 {hb['market']} 檔")
+    if hb.get("top_n"):
+        skipped.append(f"超過每日 {cfg.SCREEN_TOP_N} 檔 {hb['top_n']} 檔")
+    if skipped:
+        lines.append("<i>被濾網擋下：" + "、".join(skipped) + "</i>")
+    if obs:
+        lines.append("\n👀 <b>觀察用</b>（回測不佳，不列進場建議）")
+        for pat in sorted({s["pattern"] for s in obs}):
+            names = [f"{html.escape(s['name'])} {s['code']}" for s in obs if s["pattern"] == pat]
+            more = f" 等 {len(names)} 檔" if len(names) > 8 else ""
+            lines.append(f"{pat}：" + "、".join(names[:8]) + more)
     w = res.get("watch") or {}
     if w:
         cnt = {}
         for x in w.values():
             for tag in x["tags"]:
                 cnt[tag] = cnt.get(tag, 0) + 1
-        lines.append(f"\n👀 明天盤中即時監控 {len(w)} 檔（" + "、".join(f"{k} {v}" for k, v in cnt.items()) + "）")
+        lines.append(f"\n⚡ 明天盤中即時監控 {len(w)} 檔（" + "、".join(f"{k} {v}" for k, v in cnt.items()) + "）")
     lines.append("\n<i>只推播不下單；目標價依 A_MODE 兩種算法列出，請自行判斷。</i>")
     return "\n".join(lines)
+
+
+def history_cache(df: pd.DataFrame, days: int = 40) -> dict:
+    """把歷史日K轉成 journal.backfill 用的格式（含上櫃），用來回填訊號的 5／20 日報酬"""
+    ds = sorted(df["date"].unique())[-days:]
+    sub = df[df["date"].isin(ds)]
+    stocks = {}
+    for code, g in sub.groupby("code"):
+        key = journal.INDEX_CODE if code == INDEX_CODE else code
+        stocks[key] = {"bars": [[d, float(c)] for d, c in zip(g["date"], g["close"])]}
+    return {"days": ds, "stocks": stocks}
+
+
+def record_journal(res: dict):
+    """進場與觀察都記進訊號紀錄簿（週報會追蹤之後的表現）"""
+    src = {"三角收斂": "pattern_tri", "穿山二龍": "pattern_chuaner", "黑飛舞": "pattern_hfw"}
+    for s in src.values():
+        journal.remove(s, res["date"])
+    for slot, rows in (("進場", res["candidates"]), ("觀察", res.get("observe") or [])):
+        for s in rows:
+            journal.record(src.get(s["pattern"], "pattern"), s["code"], s["name"], slot=slot,
+                           price=s["price"], date=res["date"], alerts=s["reason"],
+                           industry="／".join(s["groups"][:2]))
 
 
 def main():
@@ -554,6 +642,11 @@ def main():
                 len(res["candidates"]), len(res["strong_groups"]), len(res["watch"]))
     for s in res["candidates"]:
         logger.info("  %s %s %s %s %.1f", s["code"], s["name"], s["pattern"], s["entry_type"], s["score"])
+    try:
+        record_journal(res)
+        journal.backfill(history_cache(df))
+    except Exception as e:
+        logger.warning("訊號紀錄失敗：%s", e)
     send_telegram(format_report(res))
     history.checkpoint(f"型態選股 {res['date']}")
 

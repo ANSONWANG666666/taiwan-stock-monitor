@@ -73,6 +73,12 @@ class Config:
     BT_IN_SAMPLE_MONTHS: int = 16     # 前 16 個月樣本內、其後為樣本外驗證
     BT_STOP_BEFORE_TARGET: str = "ma20"   # 達標前的停損：ma20（收盤跌破 20MA 全數出場）或 none（只靠最長持有天數）
 
+    # ── 每日推播：哪些型態列進場、用哪些濾網（依 2 年回測結果）──
+    ACTIVE_PATTERNS: str = "三角收斂"  # 列進場建議的型態（逗號分隔）；其餘只列「觀察用」
+    SCREEN_MARKET_FILTER: bool = True  # 加權指數收盤在 20MA 之下時不列進場
+    SCREEN_STRICT_GROUP: bool = True   # 族群從嚴：成員要「站上 20MA 且 5 日跑贏大盤」
+    SCREEN_TOP_N: int = 3              # 每種型態每天最多列幾檔進場
+
     # ── 模組二：盤中即時監控（TWSE 即時行情快照，免券商帳戶）──
     RT_EVERY_SEC: int = 20            # 輪詢間隔（秒）；證交所約每 5 秒更新一次，太密會被暫時封鎖
     RT_MAX_WATCH: int = 80            # 最多監控幾檔（持股 > 候選 > 觀察名單）
@@ -86,6 +92,10 @@ class Config:
     RT_TOUCH_PCT: float = 0.01        # 拉回／回測均線的距離
     RT_MIN_ELAPSED_MIN: int = 30      # 開盤 N 分鐘後才用「預估全日量」判斷量縮
     RT_COOLDOWN_MIN: int = 30         # 同一檔同一訊號 N 分鐘內不重複
+
+    @property
+    def active_patterns(self) -> tuple:
+        return tuple(p.strip() for p in str(self.ACTIVE_PATTERNS).split(",") if p.strip())
 
     def __post_init__(self):
         for f in fields(self):

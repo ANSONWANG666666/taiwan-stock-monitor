@@ -132,19 +132,99 @@ def test_leader_ranking_and_rotation():
     assert state["G"]["code"] == "B" and msg and "換成 B" in msg
 
 
-def test_screen_end_to_end(tmp_path, monkeypatch):
+def _e2e_frames(index_bars=None):
     # 4 檔同族群都站上 20MA（強勢），其中 1 檔出現黑飛舞
     frames = [frame(heifeiwu_bars(), code="1111", name="飛舞")]
     for k, code in enumerate(("2222", "3333", "4444")):
         frames.append(frame(flat(60) + ramp(22, 100, 115 + k), code=code, name=code))
-    frames.append(frame(flat(82, 20000), code="IX0001", name="加權指數"))
+    frames.append(frame(index_bars or flat(82, 20000), code="IX0001", name="加權指數"))
     df = pd.concat(frames)
     df["amount"] = df["amount"] * 100                    # 通過流動性門檻
     industry = {c: {"name": c, "market": "TSE", "industry": "測試族群"} for c in ("1111", "2222", "3333", "4444")}
+    return df, industry
+
+
+def test_screen_default_heifeiwu_is_observe_only(tmp_path, monkeypatch):
+    df, industry = _e2e_frames()
     monkeypatch.setattr(screener, "CONCEPT_FILE", tmp_path / "none.yaml")
     res = screener.screen(df, industry, {}, held={"1111"})
     assert res["strong_groups"]["測試族群"]["strong_n"] == 4
-    c = res["candidates"]
-    assert len(c) == 1 and c[0]["pattern"] == "黑飛舞" and c[0]["action"] == "加碼"
+    assert res["candidates"] == [] and [s["pattern"] for s in res["observe"]] == ["黑飛舞"]
     msg = screener.format_report(res)
+    assert "觀察用" in msg and "飛舞 1111" in msg and "【加碼】" not in msg
+    assert "黑飛舞" not in res["watch"].get("2222", {}).get("tags", {})
+
+
+def test_screen_active_pattern_with_filters(tmp_path, monkeypatch):
+    monkeypatch.setattr(screener, "CONCEPT_FILE", tmp_path / "none.yaml")
+    cfg = config.Config()
+    cfg.ACTIVE_PATTERNS = "黑飛舞"
+    # 大盤平盤（收盤等於 20MA）→ 大盤濾網擋下
+    df, industry = _e2e_frames()
+    res = screener.screen(df, industry, {}, held={"1111"}, cfg=cfg)
+    assert res["candidates"] == [] and res["held_back"]["market"] == 1 and not res["market_ok"]
+    assert "大盤在 20MA 之下" in screener.format_report(res, cfg)
+    # 大盤緩漲 → 站上 20MA，且個股跑贏大盤 → 列進場（持股標「加碼」）
+    df, industry = _e2e_frames(ramp(82, 20000, 20400))
+    res = screener.screen(df, industry, {}, held={"1111"}, cfg=cfg)
+    c = res["candidates"]
+    assert res["market_ok"] and len(c) == 1 and c[0]["pattern"] == "黑飛舞" and c[0]["action"] == "加碼"
+    msg = screener.format_report(res, cfg)
     assert "型態選股" in msg and "【加碼】" in msg and "測試族群" in msg
+
+
+
+# ── 分流：進場／觀察、每日前 N 檔、族群從嚴 ─────────────────────
+def _sig(code, pattern, score, groups=("A",)):
+    return {"code": code, "pattern": pattern, "score": score, "groups": list(groups)}
+
+
+def test_split_signals():
+    cfg = config.Config()
+    cfg.SCREEN_TOP_N = 2
+    kept = [_sig("1", "三角收斂", 90), _sig("2", "三角收斂", 80, ("B",)), _sig("3", "三角收斂", 70),
+            _sig("4", "三角收斂", 60), _sig("5", "穿山二龍", 99), _sig("6", "黑飛舞", 50)]
+    e, o, hb = screener.split_signals(kept, {"A"}, True, cfg)
+    assert [s["code"] for s in e] == ["1", "3"] and [s["code"] for s in o] == ["5", "6"]
+    assert hb == {"market": 0, "group": 1, "top_n": 1}
+    e, o, hb = screener.split_signals(kept, {"A"}, False, cfg)
+    assert e == [] and hb["market"] == 3
+    cfg.SCREEN_MARKET_FILTER = cfg.SCREEN_STRICT_GROUP = False
+    e, _, _ = screener.split_signals(kept, set(), False, cfg)
+    assert [s["code"] for s in e] == ["1", "2"]
+
+
+def test_group_strength_strict():
+    groups = {"G": list("ABCD")}
+    snap = {c: {"above20": True, "rs5": -0.01} for c in "ABCD"}
+    assert screener.group_strength(groups, snap)["G"]["strong"]
+    assert not screener.group_strength(groups, snap, strict=True)["G"]["strong"]
+    snap = {c: {"above20": True, "rs5": 0.02} for c in "ABCD"}
+    assert screener.group_strength(groups, snap, strict=True)["G"]["strong"]
+
+
+def test_watch_tags_limited_to_active():
+    S = series(heifeiwu_bars()[:-1])
+    assert "黑飛舞" in screener.watch_tags(S)
+    assert screener.watch_tags(S, patterns=("三角收斂",)) == {}
+
+
+def test_record_journal_and_history_cache(tmp_path, monkeypatch):
+    import csv
+    import journal
+    monkeypatch.setenv("JOURNAL_DIR", str(tmp_path))
+    res = {"date": "2025-05-01",
+           "candidates": [{"pattern": "三角收斂", "code": "1111", "name": "甲", "price": 50.0, "reason": "突破",
+                           "groups": ["半導體業"]}],
+           "observe": [{"pattern": "黑飛舞", "code": "2222", "name": "乙", "price": 30.0, "reason": "量縮",
+                        "groups": []}]}
+    screener.record_journal(res)
+    screener.record_journal(res)                       # 重跑不重複
+    rows = list(csv.DictReader((tmp_path / "signals_pattern_tri.csv").open(encoding="utf-8-sig")))
+    assert len(rows) == 1 and rows[0]["slot"] == "進場" and rows[0]["code"] == "1111"
+    rows = list(csv.DictReader((tmp_path / "signals_pattern_hfw.csv").open(encoding="utf-8-sig")))
+    assert len(rows) == 1 and rows[0]["slot"] == "觀察"
+    df = frame(flat(30, 50.0), code="1111")
+    df = pd.concat([df, frame(flat(30, 20000), code="IX0001")])
+    cache = screener.history_cache(df, days=10)
+    assert len(cache["days"]) == 10 and journal.INDEX_CODE in cache["stocks"] and "1111" in cache["stocks"]
