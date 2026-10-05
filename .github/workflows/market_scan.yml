@@ -91,6 +91,37 @@ jobs:
         run: |
           [ -d data-store/.git ] || { echo "尚未建立 data 分支，略過"; exit 0; }
           python history.py update ${SCAN_DATE:+--date $SCAN_DATE}
+
+      - name: 型態選股（穿二／黑飛舞／三角收斂）
+        if: always()
+        continue-on-error: true
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID:   ${{ secrets.TELEGRAM_CHAT_ID }}
+          DATA_DIR: data-store
+          AUTO_COMMIT: '1'
+          CANDIDATES_FILE: data-store/state/candidates.json
+          LEADER_FILE: data-store/state/leaders.json
+          SCAN_DATE: ${{ github.event.inputs.scan_date }}
+        run: |
+          [ -n "$(ls data-store/ohlc/*.csv.gz 2>/dev/null)" ] || { echo "尚未回補歷史資料，略過"; exit 0; }
+          mkdir -p data-store/state
+          python screener.py
+
+      - name: 出場檢查（holdings.yaml）
+        if: always()
+        continue-on-error: true
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID:   ${{ secrets.TELEGRAM_CHAT_ID }}
+          DATA_DIR: data-store
+          AUTO_COMMIT: '1'
+          EXIT_STATE_FILE: data-store/state/exits_state.json
+          SCAN_DATE: ${{ github.event.inputs.scan_date }}
+        run: |
+          [ -n "$(ls data-store/ohlc/*.csv.gz 2>/dev/null)" ] || { echo "尚未回補歷史資料，略過"; exit 0; }
+          mkdir -p data-store/state
+          python exit_manager.py
       # 訊號紀錄簿存在 journal 分支；失敗會重試，不影響推播
       - name: 儲存訊號紀錄
         if: always()

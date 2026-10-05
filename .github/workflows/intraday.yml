@@ -1,7 +1,8 @@
 name: 台股盤中監控
 
 # 開盤前觸發一次，同一個執行持續到收盤後：
-#   09:00–13:35 每 5 分鐘大單監控；09:30／13:00／13:50 盤中選股
+#   09:00–13:35 每 5 分鐘大單監控；09:00–13:30 每 20 秒盤中即時監控（型態觀察名單）
+#   09:30／13:00／13:50 盤中選股；13:20 黑飛舞 Day 2 出場提醒
 # 主要由 cron-job.org 在 08:50 準時觸發（見 docs/外部排程設定.md）；
 # 下面的 GitHub 排程只是備援，GitHub 常延遲或跳過，時間刻意避開整點。
 # 同一時間只會有一個在跑；後到的會排隊，等前一個結束後發現已過 14:10 就直接結束。
@@ -28,6 +29,14 @@ jobs:
     steps:
       - name: Checkout 程式碼
         uses: actions/checkout@v4
+
+      - name: Checkout 觀察名單（data 分支，只讀 state/candidates.json）
+        uses: actions/checkout@v4
+        continue-on-error: true
+        with:
+          ref: data
+          path: data-store
+          sparse-checkout: state
 
       - name: Checkout 訊號紀錄簿（journal 分支）
         uses: actions/checkout@v4
@@ -69,6 +78,8 @@ jobs:
           VOLUME_SPIKE_RATIO:  '3.0'
           VOLUME_SPIKE_MIN:    '200'
           PYTHONUNBUFFERED:   '1'
+          CANDIDATES_FILE:    data-store/state/candidates.json
+          RT_EVERY_SEC:       '20'
         run: python intraday_loop.py
 
       - name: 儲存訊號紀錄
