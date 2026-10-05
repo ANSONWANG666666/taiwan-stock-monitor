@@ -22,7 +22,7 @@ def _env(name, default):
 class Config:
     # ── 交易成本（回測用）──────────────────────────────────────────
     FEE_RATE: float = 0.001425        # 券商手續費（單邊）
-    FEE_DISCOUNT: float = 1.0         # 手續費折扣，例如 6 折填 0.6；不確定時用 1.0（不打折）
+    FEE_DISCOUNT: float = 0.6         # 手續費折扣：網路下單一般 5～6 折，取 6 折較保守；不打折填 1.0
     MIN_FEE: float = 20.0             # 最低手續費（元）；回測以報酬率計算時不使用
     TAX_RATE: float = 0.003           # 證交稅（賣出）
     SLIPPAGE: float = 0.001           # 滑價（單邊）

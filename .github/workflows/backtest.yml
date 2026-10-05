@@ -15,9 +15,9 @@ on:
         required: false
         default: 'ma20'
       fee_discount:
-        description: '手續費折扣（1 = 無折扣，0.28 = 2.8 折）'
+        description: '手續費折扣（0.6 = 6 折，網路下單一般 5～6 折；1 = 不打折）'
         required: false
-        default: '1.0'
+        default: '0.6'
 
 concurrency:
   group: backtest
