@@ -228,3 +228,24 @@ def test_record_journal_and_history_cache(tmp_path, monkeypatch):
     df = pd.concat([df, frame(flat(30, 20000), code="IX0001")])
     cache = screener.history_cache(df, days=10)
     assert len(cache["days"]) == 10 and journal.INDEX_CODE in cache["stocks"] and "1111" in cache["stocks"]
+
+
+def test_main_sends_once_per_data_date(tmp_path, monkeypatch):
+    df, industry = _e2e_frames()
+    monkeypatch.setattr(screener, "CONCEPT_FILE", tmp_path / "none.yaml")
+    monkeypatch.setattr(screener.history, "load", lambda *a, **k: df.copy())
+    monkeypatch.setattr(screener.history, "refresh_industry", lambda *a, **k: industry)
+    monkeypatch.setattr(screener.history, "checkpoint", lambda msg: None)
+    for name in ("SENT_FILE", "LEADER_FILE", "CANDIDATES_FILE"):
+        monkeypatch.setattr(screener, name, tmp_path / f"{name}.json")
+    monkeypatch.setenv("JOURNAL_DIR", str(tmp_path / "none"))
+    monkeypatch.setenv("TELEGRAM_BOT_TOKEN", "x")
+    monkeypatch.delenv("FORCE_SCAN", raising=False)
+    sent = []
+    monkeypatch.setattr(screener, "send_telegram", lambda t: sent.append(t) or True)
+    screener.main()
+    screener.main()                                   # 備援排程又跑一次 → 不重複推播
+    assert len(sent) == 1
+    monkeypatch.setenv("FORCE_SCAN", "1")
+    screener.main()
+    assert len(sent) == 2
