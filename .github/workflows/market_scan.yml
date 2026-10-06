@@ -103,6 +103,8 @@ jobs:
           CANDIDATES_FILE: data-store/state/candidates.json
           LEADER_FILE: data-store/state/leaders.json
           JOURNAL_DIR: journal-data
+          SCREENER_SENT_FILE: data-store/state/screener_sent.json
+          FORCE_SCAN: ${{ github.event.inputs.force }}
           SCAN_DATE: ${{ github.event.inputs.scan_date }}
         run: |
           [ -n "$(ls data-store/ohlc/*.csv.gz 2>/dev/null)" ] || { echo "尚未回補歷史資料，略過"; exit 0; }

@@ -39,6 +39,7 @@ TZ = ZoneInfo("Asia/Taipei")
 ROOT = Path(__file__).resolve().parent
 CANDIDATES_FILE = Path(os.environ.get("CANDIDATES_FILE", "candidates.json"))
 LEADER_FILE = Path(os.environ.get("LEADER_FILE", "leaders.json"))
+SENT_FILE = Path(os.environ.get("SCREENER_SENT_FILE", "screener_sent.json"))   # 記錄哪一天已推播過
 CONCEPT_FILE = ROOT / "concept_groups.yaml"
 HOLDINGS_FILE = ROOT / "holdings.yaml"
 MIN_AMOUNT = float(os.environ.get("SCREEN_MIN_AMOUNT", "20000000"))   # 20 日均成交值門檻（元）
@@ -632,6 +633,12 @@ def main():
         return
     if df["date"].max() != end.isoformat():
         logger.warning("最新資料日期 %s 不是 %s，以最新資料計算", df["date"].max(), end)
+    # 同一個資料日只推播一次（主要觸發＋備援排程會跑好幾次）；手動重跑設 FORCE_SCAN=1
+    data_date = df["date"].max()
+    sent = json.loads(SENT_FILE.read_text(encoding="utf-8")) if SENT_FILE.exists() else {}
+    if sent.get("last_date") == data_date and os.environ.get("FORCE_SCAN") != "1":
+        logger.info("%s 的型態選股已經推播過，略過（手動重跑請設定 FORCE_SCAN=1）", data_date)
+        return
     industry = history.refresh_industry()
     leader_state = json.loads(LEADER_FILE.read_text(encoding="utf-8")) if LEADER_FILE.exists() else {}
     held = {str(h["code"]) for h in load_holdings()}
@@ -647,7 +654,9 @@ def main():
         journal.backfill(history_cache(df))
     except Exception as e:
         logger.warning("訊號紀錄失敗：%s", e)
-    send_telegram(format_report(res))
+    if send_telegram(format_report(res)) or not os.environ.get("TELEGRAM_BOT_TOKEN"):
+        SENT_FILE.parent.mkdir(parents=True, exist_ok=True)
+        SENT_FILE.write_text(json.dumps({"last_date": res["date"]}), encoding="utf-8")
     history.checkpoint(f"型態選股 {res['date']}")
 
 
