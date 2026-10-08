@@ -412,11 +412,12 @@ def build_watch(series: Dict[str, SimpleNamespace], stock_groups: Dict[str, List
                      "tags": dict(tags), "ctx": live_context(S)}
 
     active = cfg.active_patterns                      # 盤中只盯列進場的型態；觀察用的不盯
+    forming = cfg.RT_WATCH_FORMING                    # 預設只盯「持股＋當天候選」
     for code, S in held.items():
-        add(code, S, 0, stock_groups.get(code, []), {"持股": {}} | watch_tags(S, cfg, active))
+        add(code, S, 0, stock_groups.get(code, []), {"持股": {}} | (watch_tags(S, cfg, active) if forming else {}))
     for s in cands:
         add(s["code"], series[s["code"]], 1, s["groups"], {"候選": {"pattern": s["pattern"], "score": s["score"]}})
-    for code, groups in stock_groups.items():
+    for code, groups in (stock_groups.items() if forming else ()):
         tags = watch_tags(series[code], cfg, active)
         if tags:
             add(code, series[code], 2, groups, tags)

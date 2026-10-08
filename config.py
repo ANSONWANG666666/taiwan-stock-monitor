@@ -94,6 +94,7 @@ class Config:
     RT_TOUCH_PCT: float = 0.01        # 拉回／回測均線的距離
     RT_MIN_ELAPSED_MIN: int = 30      # 開盤 N 分鐘後才用「預估全日量」判斷量縮
     RT_COOLDOWN_MIN: int = 30         # 同一檔同一訊號 N 分鐘內不重複
+    RT_WATCH_FORMING: bool = False    # 是否也盯「還在整理、尚未突破」的型態（未經回測，預設不盯）
 
     @property
     def active_patterns(self) -> tuple:
