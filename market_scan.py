@@ -44,6 +44,8 @@ KEEP_BARS = 30              # 每檔保留的日K根數（評分需要 21 根）
 BOOTSTRAP_DAYS = 25         # 首次執行回補的交易日數
 MIN_DAY_AMT = int(os.environ.get("MIN_DAY_AMT", "50000000"))   # 當日成交值 < 5000 萬不看
 MAX_DETAIL = int(os.environ.get("MAX_DETAIL", "10"))
+# 推播開關：回測（2 年）顯示「量價齊揚剛起漲」2 分、3 分都跑輸大盤，預設只記錄不推播
+PUSH = os.environ.get("MARKET_SCAN_PUSH", "1") != "0"
 SUMMARY_MAX = 40            # 摘要最多列幾檔（Telegram 單則上限 4096 字）
 REQUEST_GAP = 3.0           # TWSE 有頻率限制，每次請求間隔（秒）
 
@@ -440,8 +442,12 @@ def main():
                     h["code"], h["name"], e["score"], e["pct"], e["vol_ratio"],
                     e["breakout"], e["strong_vol"], e["near_low"], e["rise_from_low"])
 
-    detail = hits[:MAX_DETAIL]
-    ok = send_telegram(format_summary(date_iso, n_all, n_liquid, hits, len(detail), groups, industry, tags, coverage))
+    detail = hits[:MAX_DETAIL] if PUSH else []
+    if PUSH:
+        ok = send_telegram(format_summary(date_iso, n_all, n_liquid, hits, len(detail), groups, industry, tags, coverage))
+    else:
+        ok = True
+        logger.info("推播已關閉（MARKET_SCAN_PUSH=0）：只記錄訊號，不推播、不查新聞")
     results = {}
     for h in detail:
         result = check_news(h["code"], h["name"])

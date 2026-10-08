@@ -1,8 +1,9 @@
 name: 台股盤中監控
 
 # 開盤前觸發一次，同一個執行持續到收盤後：
-#   09:00–13:35 每 5 分鐘大單監控；09:00–13:30 每 20 秒盤中即時監控（型態觀察名單）
-#   09:30／13:00／13:50 盤中選股；13:20 黑飛舞 Day 2 出場提醒
+#   09:00–13:30 每 20 秒盤中即時監控（前一天的型態候選＋持股）
+#   13:20 黑飛舞 Day 2 出場提醒
+#   權值股大單監控、盤中量價齊揚選股：預設關閉（下方 BIG_ORDER_MONITOR／INTRADAY_SCREENER 改 '1' 可恢復）
 # 主要由 cron-job.org 在 08:50 準時觸發（見 docs/外部排程設定.md）；
 # 下面的 GitHub 排程只是備援，GitHub 常延遲或跳過，時間刻意避開整點。
 # 同一時間只會有一個在跑；後到的會排隊，等前一個結束後發現已過 14:10 就直接結束。
@@ -79,6 +80,8 @@ jobs:
           VOLUME_SPIKE_MIN:    '200'
           PYTHONUNBUFFERED:   '1'
           CANDIDATES_FILE:    data-store/state/candidates.json
+          BIG_ORDER_MONITOR:  '0'            # 權值股大單監控：關閉；改 '1' 恢復
+          INTRADAY_SCREENER:  '0'            # 盤中量價齊揚選股：關閉；改 '1' 恢復
           RT_EVERY_SEC:       '20'
         run: python intraday_loop.py
 

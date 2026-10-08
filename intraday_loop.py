@@ -36,6 +36,9 @@ MONITOR_START = (9, 0)
 MONITOR_END = (13, 35)
 MONITOR_EVERY = timedelta(minutes=int(os.environ.get("MONITOR_EVERY_MIN", "5")))
 SCREENER_SLOTS = [("0930", (9, 30)), ("1300", (13, 0)), ("1400", (13, 50))]
+# 開關（回測顯示「量價齊揚」選股沒有優勢；大單監控無法回測）：0 = 不執行
+ENABLE_BIG_ORDER = os.environ.get("BIG_ORDER_MONITOR", "1") != "0"
+ENABLE_SCREENER = os.environ.get("INTRADAY_SCREENER", "1") != "0"
 RT_END = (13, 30)
 RT_EVERY = timedelta(seconds=int(os.environ.get("RT_EVERY_SEC", "20")))
 EXIT_CHECK = (13, 20)          # 13:20～13:30 之間做一次，來得及在收盤前賣
@@ -119,7 +122,7 @@ def main():
                 logger.info("TWSE 今日無交易資料，判斷為休市日，結束")
                 return
 
-        if mon_start <= next_monitor <= mon_end and t >= next_monitor:
+        if ENABLE_BIG_ORDER and mon_start <= next_monitor <= mon_end and t >= next_monitor:
             safe("大單監控", stock_check_once.main)
             while next_monitor <= t:
                 next_monitor += MONITOR_EVERY
@@ -132,7 +135,7 @@ def main():
             if slot in done or t < at(t, hm):
                 continue
             # 晚啟動時，只補做仍在有效窗口內的時段（例如 12:00 後不補 09:30）
-            if stock_screener.current_slot(t) == slot:
+            if ENABLE_SCREENER and stock_screener.current_slot(t) == slot:
                 logger.info("— 盤中選股 %s —", slot)
                 safe(f"盤中選股 {slot}", run_screener, slot)
             done.add(slot)

@@ -79,6 +79,7 @@ jobs:
           SCAN_DATE:          ${{ github.event.inputs.scan_date }}
           FORCE_SCAN:         ${{ github.event.inputs.force }}
           MAX_DETAIL:         '10'
+          MARKET_SCAN_PUSH:   '0'            # 只記錄不推播（回測無優勢）；改 '1' 恢復推播
         run: python market_scan.py
 
       - name: 更新歷史日K

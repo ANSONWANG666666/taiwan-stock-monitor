@@ -236,3 +236,39 @@ def test_intraday_loop_calls_realtime_every_20s(monkeypatch):
     monkeypatch.setattr(L, "run_realtime", lambda: calls.append(t[0]))
     L.main()
     assert calls[0] == T(13, 25) and calls[-1] <= T(13, 30) and len(calls) == 16
+
+
+# ── 精簡推播：預設只盯持股＋候選；大單監控、盤中選股可關閉 ───────
+def test_build_watch_default_only_held_and_candidates():
+    tri = series(triangle_bars()[:-1], code="1111")              # 收斂中、尚未突破
+    held = series(chuaner_bars(), code="2222")
+    cand = {"code": "3333", "pattern": "三角收斂", "score": 70, "groups": ["G"]}
+    ser = {"1111": tri, "3333": series(triangle_bars(), code="3333")}
+    w = screener.build_watch(ser, {"1111": ["G"], "3333": ["G"]}, [cand], {"2222": held})
+    assert set(w) == {"2222", "3333"} and w["2222"]["tags"] == {"持股": {}}
+    import config
+    c = config.Config()
+    c.RT_WATCH_FORMING = True
+    w = screener.build_watch(ser, {"1111": ["G"], "3333": ["G"]}, [cand], {"2222": held}, c)
+    assert "1111" in w and "三角收斂" in w["1111"]["tags"]
+
+
+def test_intraday_loop_switches_off_big_order_and_screener(monkeypatch):
+    import intraday_loop as L
+    import stock_check_once
+    t = [T(9, 0)]
+    monkeypatch.setattr(L, "now", lambda: t[0])
+    monkeypatch.setattr(L, "sleep", lambda s: t.__setitem__(0, t[0] + timedelta(seconds=s)))
+    monkeypatch.setattr(L, "ENABLE_BIG_ORDER", False)
+    monkeypatch.setattr(L, "ENABLE_SCREENER", False)
+    calls = {"big": 0, "scr": 0, "rt": 0, "exit": 0}
+    monkeypatch.setattr(stock_check_once, "main", lambda: calls.__setitem__("big", calls["big"] + 1))
+    monkeypatch.setattr(stock_check_once, "fetch_stocks", lambda a, b: [{"d": DAY}])
+    monkeypatch.setattr(L, "run_screener", lambda s: calls.__setitem__("scr", calls["scr"] + 1))
+    monkeypatch.setattr(L.stock_screener, "current_slot",
+                        lambda x: "0930" if x < T(12, 0) else ("1400" if x >= T(13, 50) else "1300"))
+    monkeypatch.setattr(L, "run_realtime", lambda: calls.__setitem__("rt", calls["rt"] + 1))
+    monkeypatch.setattr(L, "run_exit_check", lambda: calls.__setitem__("exit", calls["exit"] + 1))
+    L.main()
+    assert calls["big"] == 0 and calls["scr"] == 0 and calls["rt"] > 100 and calls["exit"] == 1
+    assert t[0] <= T(13, 51)                                      # 13:50 後照常結束
