@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-每週成效摘要：每週五收盤後，讀訊號紀錄簿（journal 分支的 CSV），
+每週成效摘要：每週五收盤後（同一週只推一次），讀訊號紀錄簿（journal 分支的 CSV），
 統計各類訊號之後 5／20 個交易日的超額報酬，推播到 Telegram。
 
 只讀 CSV、不呼叫 Jev，不產生任何費用。
@@ -87,20 +87,32 @@ def fmt_stats(s: Optional[dict]) -> str:
     return f"{s['avg']:+.1f}%／勝率 {s['win']:.0%}／{s['n']} 筆{warn}"
 
 
+def one_line(label: str, rows: List[dict]) -> Optional[str]:
+    """一組訊號一行：5 日、20 日超額報酬"""
+    s5, s20 = stats(rows, "excess_5d"), stats(rows, "excess_20d")
+    if not s5 and not s20:
+        return None
+    parts = [f"5日 {fmt_stats(s5)}"]
+    if s20:
+        parts.append(f"20日 {fmt_stats(s20)}")
+    return f"• {label}：" + "｜".join(parts)
+
+
 def group_lines(rows: List[dict], key, order: List[str], labels: Dict[str, str]) -> List[str]:
     groups = defaultdict(list)
     for r in rows:
         groups[key(r)].append(r)
     lines = []
     for g in sorted(groups, key=lambda g: order.index(g) if g in order else len(order)):
-        s5, s20 = stats(groups[g], "excess_5d"), stats(groups[g], "excess_20d")
-        if not s5 and not s20:
-            continue
-        lines.append(f"<b>{labels.get(g, html.escape(g))}</b>")
-        lines.append(f"  5 日：{fmt_stats(s5)}")
-        if s20:
-            lines.append(f"  20 日：{fmt_stats(s20)}")
+        line = one_line(labels.get(g, html.escape(g)), groups[g])
+        if line:
+            lines.append(line)
     return lines
+
+
+ACTIVE = "pattern_tri"                                   # 目前有推播進場的訊號
+PATTERN_SOURCES = ["pattern_tri", "pattern_chuaner", "pattern_hfw"]
+STOPPED = {"market": "全市場掃描（量價齊揚）", "screener": "盤中選股", "monitor": "權值股大單監控"}
 
 
 def build_report(rows: List[dict], today: datetime) -> str:
@@ -112,61 +124,96 @@ def build_report(rows: List[dict], today: datetime) -> str:
     by_src = defaultdict(int)
     for r in this_week:
         by_src[r["source"]] += 1
-    week_txt = "、".join(f"{SOURCE_LABEL.get(k, k)} {v}" for k, v in sorted(by_src.items())) or "無"
+    order = PATTERN_SOURCES + list(STOPPED)
+    week_txt = "、".join(f"{SOURCE_LABEL.get(k, k)} {by_src[k]}"
+                        for k in sorted(by_src, key=lambda k: order.index(k) if k in order else 99)) or "無"
 
     lines = [f"📈 <b>訊號成效週報｜{today.strftime('%Y-%m-%d')}</b>",
-             f"本週新增訊號：{week_txt}",
-             f"累積 {len(rows)} 筆，已有 5 日結果 {n5} 筆、20 日結果 {n20} 筆",
+             f"本週新增：{week_txt}",
+             f"累積 {len(rows)} 筆；已有 5 日結果 {n5} 筆、20 日結果 {n20} 筆",
              "<i>數字為超額報酬（個股 − 加權指數）平均／勝率／筆數</i>"]
+
+    # ① 目前有推播的：型態選股
+    pat = [r for r in rows if r["source"] in PATTERN_SOURCES]
+    lines.append("\n🎯 <b>型態選股（目前推播）</b>")
+    pl = []
+    tri = [r for r in pat if r["source"] == ACTIVE]
+    pl += [x for x in (one_line("三角收斂・列進場", [r for r in tri if r.get("slot") != "觀察"]),
+                       one_line("穿山二龍・觀察", [r for r in pat if r["source"] == "pattern_chuaner"]),
+                       one_line("黑飛舞・觀察", [r for r in pat if r["source"] == "pattern_hfw"])) if x]
+    if pl:
+        lines += pl
+    else:
+        first = min((r["date"] for r in pat), default=None)
+        lines.append(f"  還沒有滿 5 個交易日的結果（{first[5:] if first else '—'} 起記錄），"
+                     "滿 5 個交易日後開始統計。")
+
+    # ② 已停推、仍在追蹤：驗證停推是否正確
+    stopped = [r for r in rows if r["source"] in STOPPED]
+    sl = []
+    market = [r for r in stopped if r["source"] == "market"]
+    for sc in ("3", "2"):
+        x = one_line(f"量價齊揚 {sc}/3 分", [r for r in market if str(r.get("score")) == sc])
+        if x:
+            sl.append(x)
+    for src in ("screener", "monitor"):
+        x = one_line(STOPPED[src], [r for r in stopped if r["source"] == src])
+        if x:
+            sl.append(x)
+    if sl:
+        lines.append("\n📴 <b>已停推、仍在追蹤</b>（若轉為穩定正報酬再考慮恢復）")
+        lines += sl
+    checked = [r for r in market if r.get("news_verdict") not in ("unchecked", "budget", "error", "", None)]
+    if stats(checked, "excess_5d"):
+        x = one_line("Jev 查過新聞的（已停用）", checked)
+        if x:
+            lines.append(x)
+
+    # ③ 本月最佳／最差：優先列目前推播的訊號
+    def best_worst(pool: List[dict], title: str) -> List[str]:
+        pool = [r for r in pool if _f(r.get("excess_5d")) is not None]
+        if not pool:
+            return []
+        month = max(r["date"] for r in pool)[:8] + "01"
+        pool = [r for r in pool if r["date"] >= month]
+        if len(pool) < 3:
+            return []
+        pool.sort(key=lambda r: _f(r["excess_5d"]), reverse=True)
+        fmt = lambda r: (f"  {html.escape(r['name'])} {r['code']}（{r['date'][5:]}）"
+                         f" {_f(r['excess_5d']):+.1f}%　{SOURCE_LABEL.get(r['source'], r['source'])}")
+        k = min(3, len(pool) // 2) or 1
+        return [f"\n🏆 <b>本月最佳（5 日，{title}）</b>"] + [fmt(r) for r in pool[:k]] + \
+               [f"🥶 <b>本月最差（5 日，{title}）</b>"] + [fmt(r) for r in pool[-k:][::-1]]
+
+    bw = best_worst([r for r in tri if r.get("slot") != "觀察"], "三角收斂進場")
+    lines += bw or best_worst(rows, "全部訊號")
 
     if not n5:
         lines.append("\n還沒有訊號滿 5 個交易日，下週起會開始有成效數字。")
-        return "\n".join(lines)
-
-    market = [r for r in rows if r["source"] == "market"]
-    is_checked = lambda r: r.get("news_verdict") not in ("unchecked", "budget", "error", "")
-
-    lines.append("\n📰 <b>全市場掃描｜依 Jev 新聞查證結論</b>")
-    lines += group_lines(market, lambda r: r.get("news_verdict") or "unchecked", VERDICT_ORDER, VERDICT_LABEL)
-
-    lines.append("\n🔍 <b>全市場掃描｜有查證 vs 未查證</b>")
-    lines += group_lines(market, lambda r: "查證" if is_checked(r) else "未查證",
-                         ["查證", "未查證"], {"查證": "有查新聞（前 10 名）", "未查證": "未查新聞"})
-
-    lines.append("\n📊 <b>全市場掃描｜依起漲評分</b>")
-    lines += group_lines(market, lambda r: str(r.get("score") or "?"), ["3", "2"],
-                         {"3": "3/3 分", "2": "2/3 分"})
-
-    lines.append("\n📡 <b>依訊號來源</b>")
-    lines += group_lines(rows, lambda r: r["source"], ["market", "screener", "monitor", "pattern_tri", "pattern_chuaner", "pattern_hfw"],
-                         SOURCE_LABEL)
-
-    recent = [r for r in rows if _f(r.get("excess_5d")) is not None]
-    recent.sort(key=lambda r: r["date"], reverse=True)
-    recent = [r for r in recent if r["date"] >= recent[0]["date"][:8] + "01"] if recent else []
-    if len(recent) >= 3:
-        recent.sort(key=lambda r: _f(r["excess_5d"]), reverse=True)
-        fmt = lambda r: (f"  {html.escape(r['name'])} {r['code']}（{r['date'][5:]}）"
-                         f" {_f(r['excess_5d']):+.1f}%　{VERDICT_LABEL.get(r.get('news_verdict'), '')}")
-        lines.append("\n🏆 <b>本月 5 日超額報酬最佳</b>")
-        lines += [fmt(r) for r in recent[:3]]
-        lines.append("🥶 <b>本月 5 日超額報酬最差</b>")
-        lines += [fmt(r) for r in recent[-3:][::-1]]
-
     lines.append(f"\n<i>任何分組少於 {MIN_SAMPLE} 筆前，差異很可能只是運氣。這是統計資訊，不構成投資建議。</i>")
     return "\n".join(lines)
 
 
+def week_key(t: datetime) -> str:
+    y, w, _ = t.isocalendar()
+    return f"{y}-W{w:02d}"
+
+
 def main():
-    today = datetime.now(TZ).strftime("%Y-%m-%d")
+    now = datetime.now(TZ)
+    today = now.strftime("%Y-%m-%d")
+    week = week_key(now)
     state = {}
     if STATE_FILE.exists():
         try:
             state = json.loads(STATE_FILE.read_text(encoding="utf-8"))
         except Exception:
             state = {}
-    if state.get("last_sent") == today and os.environ.get("FORCE_REPORT") != "1":
-        logger.info("今天已推播過週報，略過（手動重跑請填 force=1）")
+    # 同一週只推一次：備援排程常延遲到週六凌晨，用「日期」判斷會重複推播
+    sent_week = state.get("last_week") or (week_key(datetime.fromisoformat(state["last_sent"]))
+                                           if state.get("last_sent") else None)
+    if sent_week == week and os.environ.get("FORCE_REPORT") != "1":
+        logger.info("本週（%s）已推播過週報，略過（手動重跑請填 force=1）", week)
         return
     d = journal_dir()
     if not d.is_dir():
@@ -179,7 +226,7 @@ def main():
     if len(msg) > 4000:   # Telegram 單則上限 4096 字
         msg = msg[:3990] + "\n…"
     if send_telegram(msg):
-        STATE_FILE.write_text(json.dumps({"last_sent": today}), encoding="utf-8")
+        STATE_FILE.write_text(json.dumps({"last_sent": today, "last_week": week}), encoding="utf-8")
 
 
 if __name__ == "__main__":
