@@ -1,0 +1,64 @@
+name: 觀察名單門檻回測
+
+# 手動執行：Actions → 觀察名單門檻回測 → Run workflow
+# 用 yfinance 10 年日K（data 分支只有 2 年，不夠評估回檔門檻）
+# 結果：本次執行的摘要頁（完整表格）、Telegram 摘要、Artifacts 下載 watch_backtest_report.md
+on:
+  workflow_dispatch:
+    inputs:
+      codes:
+        description: '股票代號（空白分隔，例如 2330 3017 6488）；留空 = watchlist.yaml 全部'
+        required: false
+        default: ''
+      years:
+        description: '回測年數'
+        required: false
+        default: '10'
+      ref:
+        description: '波動率參考股（門檻階梯對應這檔的波動度）'
+        required: false
+        default: '2330'
+
+permissions:
+  contents: read
+
+jobs:
+  backtest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout 程式碼
+        uses: actions/checkout@v4
+
+      - name: Checkout 產業別（data 分支，判斷上市／上櫃）
+        uses: actions/checkout@v4
+        continue-on-error: true
+        with:
+          ref: data
+          path: data-store
+          sparse-checkout: meta
+
+      - name: 設定 Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: 安裝套件
+        run: pip install -r requirements.txt
+
+      - name: 執行回測
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID:   ${{ secrets.TELEGRAM_CHAT_ID }}
+          DATA_DIR: data-store
+          PYTHONUNBUFFERED: '1'
+        run: python watch_backtest.py ${{ github.event.inputs.codes }} --years "${{ github.event.inputs.years }}" --ref "${{ github.event.inputs.ref }}"
+
+      - name: 上傳報告
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: watch-backtest-report
+          path: watch_backtest_report.md
+          if-no-files-found: ignore

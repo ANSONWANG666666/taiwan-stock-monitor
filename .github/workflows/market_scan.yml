@@ -126,6 +126,28 @@ jobs:
           [ -n "$(ls data-store/ohlc/*.csv.gz 2>/dev/null)" ] || { echo "尚未回補歷史資料，略過"; exit 0; }
           mkdir -p data-store/state
           python exit_manager.py
+
+      # 觀察名單（watchlist.yaml）：分級回檔／爆量／收斂／推翻條件＋Jev 新聞查證；
+      # 同時計算市場溫度存到 data 分支 state/market_temp.json，給隔天盤前溫度卡用
+      - name: 觀察名單提醒（watchlist.yaml）
+        if: always()
+        continue-on-error: true
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID:   ${{ secrets.TELEGRAM_CHAT_ID }}
+          TYPESAFE_API_KEY:   ${{ secrets.TYPESAFE_API_KEY }}
+          FINMIND_TOKEN:      ${{ secrets.FINMIND_TOKEN }}
+          JEV_DAILY_LIMIT:    '100'          # 全市場掃描已不查新聞，這個額度給觀察名單用
+          DATA_DIR: data-store
+          AUTO_COMMIT: '1'
+          WATCH_STATE_DIR: data-store/state
+          JOURNAL_DIR: journal-data
+          SCAN_DATE: ${{ github.event.inputs.scan_date }}
+          FORCE_SCAN: ${{ github.event.inputs.force }}
+        run: |
+          [ -n "$(ls data-store/ohlc/*.csv.gz 2>/dev/null)" ] || { echo "尚未回補歷史資料，略過"; exit 0; }
+          mkdir -p data-store/state
+          python watch_alert.py post
       # 訊號紀錄簿存在 journal 分支；失敗會重試，不影響推播
       - name: 儲存訊號紀錄
         if: always()

@@ -18,7 +18,7 @@ permissions:
 jobs:
   report:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 15
 
     steps:
       - name: Checkout 程式碼
@@ -30,10 +30,19 @@ jobs:
           ref: journal
           path: journal-data
 
+      - name: Checkout 歷史資料（data 分支，觀察名單覆盤用）
+        uses: actions/checkout@v4
+        continue-on-error: true
+        with:
+          ref: data
+          path: data-store
+
       - name: 讀取週報狀態
         uses: actions/cache@v4
         with:
-          path: weekly_state.json
+          path: |
+            weekly_state.json
+            watch_review_state.json
           key: weekly-${{ github.run_id }}
           restore-keys: |
             weekly-
@@ -54,3 +63,17 @@ jobs:
           JOURNAL_DIR:        journal-data
           FORCE_REPORT:       ${{ github.event.inputs.force }}
         run: python weekly_report.py
+
+      # watchlist.yaml 沒有觀察標的時自動略過；同一週只推一次
+      - name: 觀察名單每週覆盤
+        if: always()
+        continue-on-error: true
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID:   ${{ secrets.TELEGRAM_CHAT_ID }}
+          FINMIND_TOKEN:      ${{ secrets.FINMIND_TOKEN }}
+          JOURNAL_DIR:        journal-data
+          DATA_DIR:           data-store
+          WATCH_STATE_DIR:    data-store/state
+          FORCE_REPORT:       ${{ github.event.inputs.force }}
+        run: python watch_review.py

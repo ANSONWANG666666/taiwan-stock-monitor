@@ -12,3 +12,6 @@ journal-data/
 jev_budget.json
 data-store/
 candidates.json
+watch_card_state.json
+watch_review_state.json
+watch_backtest_report.md
