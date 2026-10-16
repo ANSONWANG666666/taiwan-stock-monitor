@@ -36,7 +36,7 @@ STATE_FILE = Path("weekly_state.json")   # 防止備援排程重複推播
 
 SOURCE_LABEL = {"market": "全市場掃描", "screener": "盤中選股", "monitor": "大單監控",
                 "pattern_tri": "型態：三角收斂", "pattern_chuaner": "型態：穿山二龍（觀察）",
-                "pattern_hfw": "型態：黑飛舞（觀察）", "watch": "觀察名單提醒"}
+                "pattern_hfw": "型態：黑飛舞（觀察）", "watch": "觀察名單提醒", "digest": "大型股回檔摘要"}
 # 觀察名單提醒（watch_alert.py）依 slot 分組
 WATCH_SLOTS = [("L1", "第一級 回檔"), ("L2", "第二級 回檔"), ("L3", "第三級 回檔／破200MA"),
                ("爆量", "異常爆量"), ("收斂", "波動收斂"), ("過熱", "正乖離過熱"), ("推翻", "推翻條件觸發")]
@@ -127,7 +127,7 @@ def build_report(rows: List[dict], today: datetime) -> str:
     by_src = defaultdict(int)
     for r in this_week:
         by_src[r["source"]] += 1
-    order = PATTERN_SOURCES + ["watch"] + list(STOPPED)
+    order = PATTERN_SOURCES + ["watch", "digest"] + list(STOPPED)
     week_txt = "、".join(f"{SOURCE_LABEL.get(k, k)} {by_src[k]}"
                         for k in sorted(by_src, key=lambda k: order.index(k) if k in order else 99)) or "無"
 
@@ -153,10 +153,14 @@ def build_report(rows: List[dict], today: datetime) -> str:
 
     # ①-b 觀察名單提醒：提醒之後的表現（檢查門檻是否有意義，不是績效）
     watch = [r for r in rows if r["source"] == "watch"]
-    if watch:
+    digest = [r for r in rows if r["source"] == "digest"]
+    if watch or digest:
         lines.append("\n👀 <b>觀察名單提醒（提醒後表現）</b>")
         wl = [x for x in (one_line(label, [r for r in watch if r.get("slot") == s])
                           for s, label in WATCH_SLOTS) if x]
+        x = one_line("大型股回檔摘要（新進第三級）", digest)
+        if x:
+            wl.append(x)
         lines += wl or ["  還沒有滿 5 個交易日的結果。"]
 
     # ② 已停推、仍在追蹤：驗證停推是否正確

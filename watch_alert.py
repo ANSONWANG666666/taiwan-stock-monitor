@@ -79,6 +79,7 @@ DEFAULT_SETTINGS = {
     "other_alerts": {"ma200_hot_dev": 30, "volume_spike_mult": 2.0, "squeeze_pct": 5},
     "jev_news_for": ["drawdown2", "drawdown3", "invalidation", "volume_spike"],
     "hy_spread_polarity": "contrarian",
+    "digest": {"enabled": True, "top_n": 150, "max_list": 15},
 }
 
 
@@ -483,6 +484,9 @@ def alert_card(a: Alert, item: dict, temp: Optional[dict], news_block: str = "")
         lines += ["<b>目前已觸發：</b>"] + [f"• {e(h)}" for h in a.extra["hits"]]
     if news_block:
         lines.append(news_block)
+    if item.get("auto"):
+        lines.append("\n🤖 <i>Jev 自動收錄：理由是講者原文、推翻條件是預設值。"
+                     "改成自己的之後，刪掉 watchlist.yaml 裡這檔的 auto: true。</i>")
     lines += ["", f"<i>加入觀察 {item.get('added', '—')}｜來源 {e(str(item.get('source', '—')))}</i>",
               "<i>此提醒只代表「請深入檢視現況」，不是買進或賣出訊號。</i>",
               f"🔗 <a href='https://tw.stock.yahoo.com/quote/{a.code}'>查看行情</a>"]
@@ -500,6 +504,79 @@ def _news(a: Alert, settings: dict):
     except Exception as e:
         logger.warning("新聞查證失敗 %s：%s", a.code, str(e)[:80])
         return None, ""
+
+
+# ── 大型股回檔摘要（全市場，一天一則）──────────────────────────────
+def industry_names() -> Dict[str, str]:
+    p = history.DATA_DIR / "meta" / "industry.json"
+    try:
+        return {c: v.get("industry", "") for c, v in json.loads(p.read_text(encoding="utf-8"))["stocks"].items()}
+    except Exception:
+        return {}
+
+
+def digest(df: pd.DataFrame, settings: dict, exclude: set) -> List[dict]:
+    """流動性前 N 大（20 日平均成交值）中，今天「新進入」第三級的股票：
+    今天自一年高點回檔達門檻而昨天還沒有，或今天收盤剛跌破 200 日均線。門檻同樣依波動倍數校正。"""
+    cfg = settings.get("digest") or {}
+    stocks = df[df["code"].map(history.is_common_stock)]
+    if stocks.empty:
+        return []
+    W = lambda col: stocks.pivot_table(index="date", columns="code", values=col).sort_index()
+    c, amt = W("adj_close"), W("amount")
+    if len(c) < 200:
+        return []
+    raw, ref = W("close"), W("ref")
+    ret = c.pct_change()
+    ref_code = str(settings["vol_scale"].get("reference") or "2330")
+    vs = settings["vol_scale"]
+    if vs.get("enabled") and ref_code in ret:
+        sd = ret.iloc[-YEAR:].std()
+        mult = (sd / sd[ref_code]).clip(vs["min_mult"], vs["max_mult"])
+    else:
+        mult = pd.Series(1.0, index=c.columns)
+    l3 = settings["ladder"]["l3_dd252"] * mult
+    hi = c.rolling(YEAR, min_periods=200).max()
+    dd = (c / hi - 1) * 100
+    ma = c.rolling(200, min_periods=200).mean()
+    dd_t, dd_y = dd.iloc[-1], dd.iloc[-2]
+    new_dd = (dd_t <= -l3) & ~(dd_y <= -l3)
+    new_ma = (c.iloc[-1] < ma.iloc[-1]) & (c.iloc[-2] >= ma.iloc[-2])
+    liquid = amt.iloc[-20:].mean().nlargest(int(cfg.get("top_n", 150))).index
+    hits = [x for x in liquid if (new_dd.get(x, False) or new_ma.get(x, False)) and x not in exclude]
+    names = stocks.groupby("code")["name"].last()
+    ind = industry_names()
+    out = []
+    for x in hits:
+        why = []
+        if new_dd.get(x, False):
+            why.append(f"距一年高 {dd_t[x]:.1f}%（門檻 {l3[x]:.1f}%）")
+        if new_ma.get(x, False):
+            why.append("剛跌破 200MA")
+        r0 = ref[x].iloc[-1] if not np.isnan(ref[x].iloc[-1]) else raw[x].iloc[-2]
+        out.append({"code": x, "name": str(names.get(x, x)), "industry": ind.get(x, ""),
+                    "price": float(raw[x].iloc[-1]), "pct": float((raw[x].iloc[-1] / r0 - 1) * 100) if r0 else 0.0,
+                    "dd252": float(dd_t[x]), "dev200": float((c[x].iloc[-1] / ma[x].iloc[-1] - 1) * 100),
+                    "amount_e8": float(amt[x].iloc[-20:].mean() / 1e8), "reason": "、".join(why)})
+    return sorted(out, key=lambda r: -r["amount_e8"])
+
+
+def digest_message(rows: List[dict], data_date: str, settings: dict) -> str:
+    cfg = settings.get("digest") or {}
+    n_max = int(cfg.get("max_list", 15))
+    e = html.escape
+    L = [f"📉 <b>大型股回檔摘要｜{data_date}</b>",
+         f"流動性前 {cfg.get('top_n', 150)} 大中，今天新進入重大回檔區 {len(rows)} 檔"
+         "（觀察名單內的股票另有個別提醒，不重複列）："]
+    for r in rows[:n_max]:
+        ind = f"｜{e(r['industry'])}" if r["industry"] else ""
+        L.append(f"• <b>{e(r['name'])} {r['code']}</b>{ind}　{r['price']:,.2f}（{r['pct']:+.1f}%）\n"
+                 f"  {e(r['reason'])}；200MA 乖離 {r['dev200']:+.1f}%")
+    if len(rows) > n_max:
+        L.append(f"…另有 {len(rows) - n_max} 檔")
+    L.append("\n<i>只用來發現值得研究的標的，不是買賣訊號。想追蹤就加進 watchlist.yaml，"
+             "或把研究筆記上傳到 transcripts/ 讓 Jev 判斷後自動收錄。</i>")
+    return "\n".join(L)
 
 
 # ── 收盤後 ───────────────────────────────────────────────────────
@@ -557,10 +634,22 @@ def run_post(end: date, now: Optional[datetime] = None, df: Optional[pd.DataFram
                 sent += 1
                 journal.record("watch", a.code, item.get("name") or a.name, slot=a.slot, price=a.price,
                                pct=a.pct, alerts=a.reason, news=result, date=data_date)
+    n_digest = 0
+    if (settings.get("digest") or {}).get("enabled", True):
+        try:
+            rows = digest(df, settings, {w["code"] for w in items})
+            n_digest = len(rows)
+            if rows and send(digest_message(rows, data_date, settings)):
+                for r in rows:
+                    journal.record("digest", r["code"], r["name"], slot="L3", price=r["price"], pct=r["pct"],
+                                   alerts=r["reason"], date=data_date, industry=r["industry"])
+            logger.info("大型股回檔摘要：%d 檔", n_digest)
+        except Exception as e:
+            logger.warning("大型股回檔摘要失敗：%s", e)
     cd["_last_date"] = data_date
     _write_json(COOLDOWN_FILE, cd)
     logger.info("觀察名單 %d 檔，推播 %d 則", len(items), sent)
-    return {"sent": sent, "temp": temp}
+    return {"sent": sent, "temp": temp, "digest": n_digest}
 
 
 # ── 開盤前 ───────────────────────────────────────────────────────

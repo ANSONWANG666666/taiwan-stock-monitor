@@ -336,3 +336,86 @@ def test_backtest_vol_scaled_suggestions():
     assert 1.6 < s["3017"]["波動倍數"] < 2.4 and s["3017"]["L2 20日回檔"] > 15
     assert "基準：任意一天" in res["markdown"] and "不是買進訊號" in res["markdown"]
     assert wb.yahoo_symbol("6488", {"6488": "OTC"}) == "6488.TWO"
+
+
+# ── 大型股回檔摘要 ───────────────────────────────────────────────
+def test_digest_lists_only_liquid_new_level3():
+    n = 300
+    rise = list(np.linspace(100, 200, n - 2))
+    crash = np.array(rise + [195, 150])                  # 今天才跌到一年高點 −25%（昨天 −2.5%）
+    already = np.array(rise[:-20] + list(np.linspace(150, 140, 22)))   # 早就在回檔區，不是「新進入」
+    df = market_df(n, special={"5001": crash, "5002": already, "5003": crash.copy()})
+    df.loc[df.code == "5003", "amount"] = 1.0             # 成交值太小，不在前 N 大
+    s = {**wa.DEFAULT_SETTINGS, "digest": {"enabled": True, "top_n": 10, "max_list": 15},
+         "vol_scale": {**wa.DEFAULT_SETTINGS["vol_scale"], "enabled": False}}
+    df.loc[df.code.isin(["5001", "5002"]), "amount"] *= 1e6
+    rows = wa.digest(df, s, set())
+    codes = [r["code"] for r in rows]
+    assert "5001" in codes and "5002" not in codes and "5003" not in codes
+    r = rows[codes.index("5001")]
+    assert "距一年高 -25" in r["reason"] and r["pct"] == pytest.approx(150 / 195 * 100 - 100, abs=0.1)
+    assert wa.digest(df, s, {"5001"}) == [x for x in rows if x["code"] != "5001"]   # 觀察名單內的不重複列
+    msg = wa.digest_message(rows, "2026-10-16", s)
+    assert "大型股回檔摘要" in msg and "5001" in msg and "不是買賣訊號" in msg
+
+
+def test_run_post_sends_digest_and_records(env):
+    n = 300
+    rise = list(np.linspace(100, 200, n - 2))
+    df = market_df(n, special={"5001": np.array(rise + [195, 150])})
+    df.loc[df.code == "5001", "amount"] *= 1e6
+    (env / "watchlist.yaml").write_text("watchlist:\n", encoding="utf-8")
+    sent = []
+    res = wa.run_post(datetime(2026, 10, 16).date(), df=df, ext=NO_EXT, send=lambda m: sent.append(m) or True)
+    assert res["digest"] >= 1 and any("大型股回檔摘要" in m for m in sent)
+    rows = list(csv.DictReader(open(env / "journal" / "signals_digest.csv", encoding="utf-8-sig")))
+    assert any(r["code"] == "5001" and r["source"] == "digest" for r in rows)
+
+
+def test_weekly_report_digest_line():
+    rows = [{"source": "digest", "date": "2026-09-01", "code": "5001", "name": "x", "slot": "L3",
+             "excess_5d": "1.0", "excess_20d": ""}]
+    assert "大型股回檔摘要（新進第三級）" in weekly_report.build_report(rows, datetime(2026, 10, 16, tzinfo=TZ))
+
+
+# ── Jev 自動收錄 ─────────────────────────────────────────────────
+def _jev_res(*items):
+    return {"mode": "jev", "not_checked": [], "results": [
+        {"code": c, "name": nm, "segment": seg, "accepted": acc, "stance": st, "sub": 0.9, "chk": 0.8, "why": ""}
+        for c, nm, seg, acc, st in items]}
+
+
+def test_auto_add_writes_valid_yaml(tmp_path):
+    p = tmp_path / "watchlist.yaml"
+    p.write_text(WATCH_YAML, encoding="utf-8")
+    res = _jev_res(("2330", "台積電", '來賓說：台積電 "N2" 毛利率 60%：明年 #1', True, "bullish"),
+                   ("2603", "長榮", "運價下跌", True, "bearish"),          # 看空不加
+                   ("3017", "奇鋐", "已在名單", True, "bullish"),          # 已存在不加
+                   ("2454", "聯發科", "很強", False, "bullish"))           # 沒通過不加
+    added = wi.auto_add(res, "節目: 1016", path=p, today="2026-10-16")
+    assert [r["code"] for r in added] == ["2330"]
+    cfg = wa.load_watchlist(p)
+    w = {x["code"]: x for x in cfg["watchlist"]}["2330"]
+    assert w["auto"] is True and w["thesis"].startswith("【講者原文】") and '"N2"' in w["thesis"]
+    assert w["source"] == "節目: 1016（Jev 自動收錄）" and w["invalidation"]["rules"] == [{"type": "break_ma", "days": 200}]
+    assert len(cfg["watchlist"]) == 3                                       # 原本 2 檔 + 1
+    assert wi.auto_add(res, "x", path=p) == []                              # 再跑一次不重複加入
+
+
+def test_auto_add_into_empty_list_and_skips_heuristic(tmp_path):
+    p = tmp_path / "watchlist.yaml"
+    p.write_text("settings: {}\nwatchlist: []\n", encoding="utf-8")
+    res = _jev_res(("2330", "台積電", "營收年增 30%", True, "bullish"))
+    assert wi.auto_add({**res, "mode": "heuristic"}, "x", path=p) == []     # 關鍵字模式不自動加入
+    assert len(wi.auto_add(res, "x", path=p)) == 1
+    assert [w["code"] for w in wa.load_watchlist(p)["watchlist"]] == ["2330"]
+
+
+def test_auto_card_and_review_flags(env):
+    a = wa.Alert("2330", "台積電", "drawdown", 1, "回檔", 1000, -1, "2026-10-16")
+    card = wa.alert_card(a, {"code": "2330", "name": "台積電", "auto": True, "thesis": "x"}, None)
+    assert "Jev 自動收錄" in card and "auto: true" in card
+    msg = wr.build([{"code": "2330", "name": "台積電", "auto": True, "added": "2026-10-16",
+                     "invalidation": {"rules": []}}], market_df(300), pd.Series(dtype=float), "0050",
+                   datetime(2026, 10, 16).date(), {}, foreign=lambda c, d: pd.Series(dtype=float))
+    assert "Jev 自動收錄（2026-10-16）" in msg

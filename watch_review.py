@@ -155,6 +155,10 @@ def build(items, df, bench: pd.Series, bench_code: str, today: date, temp: Optio
         if not w.get("invalidation"):
             L.append(f"▫️ {name}：沒有填推翻條件，無法覆盤，請補上")
             any_line = True
+        if w.get("auto"):
+            L.append(f"🤖 {name}：Jev 自動收錄（{e(str(w.get('added', '')))}），理由與推翻條件還是預設值，"
+                     "請改成自己的或刪除")
+            any_line = True
     if not any_line:
         L.append("沒有任何推翻條件被觸發。")
 

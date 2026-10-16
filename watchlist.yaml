@@ -17,6 +17,7 @@
 #       - {type: foreign_net_sell_streak, days: 10}  外資連續 N 日賣超（FinMind）
 #       - {type: drawdown_from_high, pct: 30}        自一年高點回檔 ≥ N%
 #   holding       {shares: 股數}（1 張 = 1000 股）；有填才會用持股市值計算週覆盤報酬
+#   auto          true = Jev 從 transcripts/ 逐字稿自動收錄，理由與推翻條件是預設值；改成自己的後刪掉這行
 #
 settings:
   cooldown_hours: 72            # 同一檔、同一類提醒 72 小時內不重發（等級升高例外）
@@ -37,6 +38,10 @@ settings:
   # 哪些提醒附 Jev 新聞查證（drawdown1/2/3、volume_spike、invalidation、ma200_hot、squeeze）
   jev_news_for: [drawdown2, drawdown3, invalidation, volume_spike]
   hy_spread_polarity: contrarian  # contrarian：信用利差擴大加分（逢恐慌加碼）；risk_off：利差擴大扣分
+  digest:                       # 大型股回檔摘要：全市場流動性前 N 大，今天新進入第三級的合併成一則
+    enabled: true
+    top_n: 150                  # 20 日平均成交值前 N 大
+    max_list: 15                # 一則最多列幾檔
 
 benchmark: "0050"               # 週覆盤比較的大盤 ETF
 
