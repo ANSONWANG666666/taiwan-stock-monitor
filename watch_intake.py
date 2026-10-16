@@ -15,7 +15,9 @@
        checkable    有沒有可查證的具體事實（數字、日期、產品、客戶）
        stance       看多／看空／中性
   4. 程式依門檻決定：substantive ≥ 0.6 且 checkable ≥ 0.5 才列為候選
-不會自動寫進 watchlist.yaml：候選要你補上「推翻條件」後自己加入（沒有推翻條件就無法覆盤）。
+  5. 候選中「看多」的自動寫進 watchlist.yaml（每份最多 5 檔，標記 auto: true）：
+     理由先放講者原文、推翻條件先用「跌破 200 日均線」，請你之後改成自己的。
+     INTAKE_AUTO_ADD=0 可關閉自動加入。
 
 未設定 TYPESAFE_API_KEY 時改用關鍵字規則（較粗糙，訊息會註明）。
 """
@@ -29,6 +31,7 @@ import logging
 import os
 import re
 import sys
+from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Optional
 
@@ -223,7 +226,59 @@ def yaml_snippet(r: dict, source: str) -> str:
             f"      rules:\n        - {{type: break_ma, days: 200}}")
 
 
-def format_message(res: dict, source: str) -> str:
+AUTO_ADD = os.environ.get("INTAKE_AUTO_ADD", "1") != "0"
+MAX_ADD = int(os.environ.get("INTAKE_MAX_ADD", "5"))      # 一份逐字稿最多自動加入幾檔
+
+
+def auto_add(res: dict, source: str, path: Optional[Path] = None, today: Optional[str] = None) -> List[dict]:
+    """把 Jev 判定「有實質論點且看多」的股票寫進 watchlist.yaml（標記 auto: true）。
+    只在 Jev 模式下做（關鍵字規則太粗糙，不自動加入）；已在名單中的不重複加入。
+    理由先放講者原文、推翻條件先用「跌破 200 日均線」，等你改成自己的。"""
+    import yaml
+    import watch_alert
+
+    if not AUTO_ADD or res.get("mode") != "jev":
+        return []
+    path = path or watch_alert.WATCHLIST_FILE
+    if not path.exists():
+        logger.warning("找不到 %s，不自動加入", path)
+        return []
+    text = path.read_text(encoding="utf-8")
+    have = {w["code"] for w in watch_alert.load_watchlist(path)["watchlist"]}
+    picks = [r for r in res["results"] if r["accepted"] and r.get("stance") == "bullish" and r["code"] not in have]
+    picks = sorted(picks, key=lambda r: -(r["sub"] + r["chk"]))[:MAX_ADD]
+    if not picks:
+        return []
+    today = today or datetime.now(watch_alert.TZ).strftime("%Y-%m-%d")
+    q = lambda s: json.dumps(s, ensure_ascii=False)       # 雙引號字串＝合法 YAML，避免冒號、引號出錯
+    blocks = []
+    for r in picks:
+        quote = re.sub(r"\s+", " ", r["segment"])[:300]
+        blocks.append(
+            f"  - code: \"{r['code']}\"\n    name: {q(r['name'])}\n    added: {today}\n"
+            f"    source: {q(source + '（Jev 自動收錄）')}\n"
+            f"    auto: true          # 待確認：改成自己的理由與推翻條件後刪掉這行\n"
+            f"    thesis: {q('【講者原文】' + quote)}\n"
+            f"    invalidation:\n      text:\n        - \"（待補：什麼事發生代表論點錯了）\"\n"
+            f"      rules:\n        - {{type: break_ma, days: 200}}\n    holding: {{shares: 0}}\n")
+    new = re.sub(r"(?m)^watchlist:\s*\[\]\s*$", "watchlist:", text)
+    if not re.search(r"(?m)^watchlist:\s*$", new):
+        logger.warning("watchlist.yaml 找不到「watchlist:」區塊，不自動加入")
+        return []
+    new = new.rstrip("\n") + "\n" + "".join(blocks)
+    try:   # 寫入前先確認新檔案仍是正確的 YAML，而且檔數正確
+        tmp = yaml.safe_load(new)
+        if len([w for w in tmp.get("watchlist") or [] if w]) != len(have) + len(picks):
+            raise ValueError("檔數不符")
+    except Exception as e:
+        logger.warning("自動加入後 YAML 驗證失敗（%s），不寫入", e)
+        return []
+    path.write_text(new, encoding="utf-8")
+    logger.info("自動加入觀察名單：%s", "、".join(f"{r['name']}{r['code']}" for r in picks))
+    return picks
+
+
+def format_message(res: dict, source: str, added: Optional[List[dict]] = None) -> str:
     e = html.escape
     acc = [r for r in res["results"] if r["accepted"]]
     rej = [r for r in res["results"] if not r["accepted"]]
@@ -242,7 +297,11 @@ def format_message(res: dict, source: str) -> str:
         L.append("、".join(f"{e(r['name'])}（{e(r['why'])}）" for r in rej[:20]))
     if res["not_checked"]:
         L.append(f"\n<i>另有 {len(res['not_checked'])} 檔因數量或 Jev 額度上限未判斷</i>")
-    if acc:
+    if added:
+        L.append(f"\n🤖 <b>已自動加入觀察名單（{len(added)}）</b>：" + "、".join(f"{e(r['name'])} {r['code']}" for r in added))
+        L.append("<i>理由暫用講者原文、推翻條件暫用「跌破 200 日均線」。請到 watchlist.yaml 改成自己的，"
+                 "改好後刪掉 auto: true；不想追蹤就整段刪除。看空或中性的不會自動加入。</i>")
+    elif acc:
         L.append("\n<i>要加入觀察請在 watchlist.yaml 補上理由與推翻條件（沒有推翻條件無法覆盤），範例：</i>")
         L.append("<pre>" + e(yaml_snippet(acc[0], source)) + "</pre>")
     return "\n".join(L)
@@ -259,7 +318,8 @@ def main():
     logger.info("名稱表 %d 檔", len(table))
     for p in files:
         res = screen_text(p.read_text(encoding="utf-8", errors="ignore"), table)
-        msg = format_message(res, p.stem)
+        added = auto_add(res, p.stem)
+        msg = format_message(res, p.stem, added)
         logger.info("\n%s", msg)
         send_telegram(msg)
 

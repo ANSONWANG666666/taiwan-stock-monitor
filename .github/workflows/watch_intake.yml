@@ -1,8 +1,8 @@
 name: 觀察名單收錄過濾（Jev）
 
 # 把新聞或節目逐字稿（.txt）上傳到 transcripts/ 資料夾就會自動執行：
-# Jev 判斷講者對每檔股票有沒有提出實質的基本面論據，結果推到 Telegram。
-# 不會自動改 watchlist.yaml；候選要你補上理由與推翻條件後自己加入。
+# Jev 判斷講者對每檔股票有沒有提出實質的基本面論據，結果推到 Telegram；
+# 有實質論點且看多的自動加入 watchlist.yaml（auto: true，理由與推翻條件待你改成自己的）。
 on:
   push:
     branches: [main]
@@ -16,7 +16,11 @@ on:
         default: ''
 
 permissions:
-  contents: read
+  contents: write   # 自動加入時寫回 watchlist.yaml
+
+concurrency:
+  group: watch-intake
+  cancel-in-progress: false
 
 jobs:
   intake:
@@ -63,3 +67,17 @@ jobs:
           echo "處理：$files"
           [ -n "$files" ] || { echo "沒有新的逐字稿"; exit 0; }
           IFS=$'\n'; python watch_intake.py $files
+
+      - name: 寫回觀察名單（自動收錄）
+        if: always()
+        run: |
+          git diff --quiet -- watchlist.yaml && { echo "名單沒有變動"; exit 0; }
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add watchlist.yaml
+          git commit -q -m "觀察名單：Jev 自動收錄 $(TZ=Asia/Taipei date '+%F %H:%M')"
+          for i in 1 2 3; do
+            git pull -q --rebase origin main && git push -q origin HEAD:main && exit 0
+            sleep $((i * 5))
+          done
+          echo "::warning::觀察名單寫回失敗（可能剛好有人同時修改）"
