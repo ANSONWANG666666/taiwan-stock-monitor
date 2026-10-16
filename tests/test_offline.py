@@ -141,6 +141,7 @@ def env(tmp_path, monkeypatch):
         monkeypatch.setattr(mod, "TOKEN", "t")
         monkeypatch.setattr(mod, "CHAT_ID", "c")
     monkeypatch.setenv("TYPESAFE_API_KEY", "test-key")
+    monkeypatch.setenv("FORCE_MONITOR", "1")        # 測試不受交易時段限制
     real_check = news_check.check_news
     wrapped = lambda s, n, transport=None, **kw: real_check(s, n, transport=rec.jev, **kw)
     monkeypatch.setattr(stock_check_once, "check_news", wrapped)
@@ -416,3 +417,16 @@ def test_news_neutral_when_lead_is_confirmed():
     items = [{"title": "法說會日期公告", "published": pub, "answers": _ans("neutral", 0.5, False)},
              {"title": "傳小道消息", "published": pub, "answers": _ans("neutral", 0.2, True)}]
     assert news_check.summarize(items, now)["verdict"] == "neutral"
+
+
+def test_monitor_skips_outside_session_and_auction(env, monkeypatch):
+    from datetime import datetime as dt
+    assert stock_check_once.in_session(dt(2026, 10, 16, 10, 0, tzinfo=stock_check_once.TZ))
+    assert not stock_check_once.in_session(dt(2026, 10, 16, 17, 57, tzinfo=stock_check_once.TZ))
+    assert not stock_check_once.in_session(dt(2026, 10, 17, 10, 0, tzinfo=stock_check_once.TZ))   # 週六
+    # 收盤集合競價的「單筆」不算大金額成交
+    snap = {"price": 2420.0, "prev": 2440.0, "total_vol": 30000, "day_amt": 7e10, "trade_vol": 6066,
+            "trade_amt": 2420.0 * 6066 * 1000, "bid_vol1": 0, "bid_px1": 0.0, "time": "13:30:00"}
+    assert stock_check_once.detect_alerts(snap, [], 0) == []
+    snap["time"] = "11:15:20"
+    assert [a["type"] for a in stock_check_once.detect_alerts(snap, [], 0)] == ["TRADE_AMT"]
