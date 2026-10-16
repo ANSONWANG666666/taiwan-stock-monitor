@@ -122,3 +122,29 @@ def test_main_sends_once_per_day(tmp_path, monkeypatch):
     monkeypatch.setenv("FORCE_REPORT", "1")   # 手動強制
     weekly_report.main()
     assert len(sent) == 2
+
+
+def test_state_in_data_branch_survives_cache_miss(tmp_path, monkeypatch):
+    """Actions 快取讀不到（例如 workflow 改了 path）時，仍靠 data 分支的紀錄避免重複推播"""
+    jd = tmp_path / "journal-data"
+    jd.mkdir()
+    _write(jd, "market", [_row("market", "2026-10-01", "3481", "rumor_driven", 2, 1.5)])
+    data_state = tmp_path / "data-store" / "state" / "weekly_state.json"
+    monkeypatch.setattr(weekly_report, "STATE_FILE", data_state)
+    monkeypatch.setattr(weekly_report, "LEGACY_STATE", tmp_path / "weekly_state.json")
+    monkeypatch.setenv("JOURNAL_DIR", str(jd))
+    monkeypatch.delenv("FORCE_REPORT", raising=False)
+    monkeypatch.delenv("DATA_DIR", raising=False)
+    sent = []
+    monkeypatch.setattr(weekly_report, "send_telegram", lambda t: sent.append(t) or True)
+
+    class FakeDT(datetime):
+        @classmethod
+        def now(cls, tz=None):
+            return datetime(2026, 10, 16, 17, 10, tzinfo=TZ)
+    monkeypatch.setattr(weekly_report, "datetime", FakeDT)
+    weekly_report.main()
+    assert len(sent) == 1 and data_state.exists()
+    (tmp_path / "weekly_state.json").unlink()            # 快取沒還原
+    weekly_report.main()
+    assert len(sent) == 1

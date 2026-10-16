@@ -2,7 +2,7 @@ name: 台股訊號成效週報
 
 on:
   schedule:
-    # 主要由 cron-job.org 在週五 17:10 觸發；以下為備援，同一天已推播過會自動跳過
+    # 主要由 cron-job.org 在週五 17:10 觸發；以下為備援，同一週已推播過會自動跳過
     - cron: '17 9 * * 5'     # 17:17
     - cron: '47 11 * * 5'    # 19:47
   workflow_dispatch:
@@ -12,8 +12,12 @@ on:
         required: false
         default: ''
 
+concurrency:
+  group: weekly-report
+  cancel-in-progress: false
+
 permissions:
-  contents: read
+  contents: write   # 已推播紀錄寫回 data 分支 state/weekly_state.json
 
 jobs:
   report:
@@ -62,6 +66,9 @@ jobs:
           TELEGRAM_CHAT_ID:   ${{ secrets.TELEGRAM_CHAT_ID }}
           JOURNAL_DIR:        journal-data
           FORCE_REPORT:       ${{ github.event.inputs.force }}
+          WEEKLY_STATE_FILE:  data-store/state/weekly_state.json
+          DATA_DIR:           data-store
+          AUTO_COMMIT:        '1'
         run: python weekly_report.py
 
       # watchlist.yaml 沒有觀察標的時自動略過；同一週只推一次

@@ -32,7 +32,10 @@ logger = logging.getLogger(__name__)
 
 TZ = ZoneInfo("Asia/Taipei")
 MIN_SAMPLE = int(os.environ.get("MIN_SAMPLE", "30"))
-STATE_FILE = Path("weekly_state.json")   # 防止備援排程重複推播
+# 防止備援排程重複推播。存在 data 分支（WEEKLY_STATE_FILE），不靠 Actions 快取：
+# 快取在 workflow 的 path 設定改變時會讀不到舊紀錄，造成重複推播
+STATE_FILE = Path(os.environ.get("WEEKLY_STATE_FILE", "weekly_state.json"))
+LEGACY_STATE = Path("weekly_state.json")
 
 SOURCE_LABEL = {"market": "全市場掃描", "screener": "盤中選股", "monitor": "大單監控",
                 "pattern_tri": "型態：三角收斂", "pattern_chuaner": "型態：穿山二龍（觀察）",
@@ -214,19 +217,22 @@ def week_key(t: datetime) -> str:
     return f"{y}-W{w:02d}"
 
 
+def _sent_week(p: Path) -> Optional[str]:
+    try:
+        state = json.loads(p.read_text(encoding="utf-8"))
+    except Exception:
+        return None
+    if state.get("last_week"):
+        return state["last_week"]
+    return week_key(datetime.fromisoformat(state["last_sent"])) if state.get("last_sent") else None
+
+
 def main():
     now = datetime.now(TZ)
     today = now.strftime("%Y-%m-%d")
     week = week_key(now)
-    state = {}
-    if STATE_FILE.exists():
-        try:
-            state = json.loads(STATE_FILE.read_text(encoding="utf-8"))
-        except Exception:
-            state = {}
     # 同一週只推一次：備援排程常延遲到週六凌晨，用「日期」判斷會重複推播
-    sent_week = state.get("last_week") or (week_key(datetime.fromisoformat(state["last_sent"]))
-                                           if state.get("last_sent") else None)
+    sent_week = max(filter(None, (_sent_week(p) for p in {STATE_FILE, LEGACY_STATE})), default=None)
     if sent_week == week and os.environ.get("FORCE_REPORT") != "1":
         logger.info("本週（%s）已推播過週報，略過（手動重跑請填 force=1）", week)
         return
@@ -241,7 +247,13 @@ def main():
     if len(msg) > 4000:   # Telegram 單則上限 4096 字
         msg = msg[:3990] + "\n…"
     if send_telegram(msg):
-        STATE_FILE.write_text(json.dumps({"last_sent": today, "last_week": week}), encoding="utf-8")
+        data = json.dumps({"last_sent": today, "last_week": week})
+        for p in {STATE_FILE, LEGACY_STATE}:
+            p.parent.mkdir(parents=True, exist_ok=True)
+            p.write_text(data, encoding="utf-8")
+        if os.environ.get("DATA_DIR"):
+            import history          # 寫回 data 分支（AUTO_COMMIT=1 時）
+            history.checkpoint(f"週報 {week}")
 
 
 if __name__ == "__main__":
