@@ -1,0 +1,65 @@
+name: 觀察名單收錄過濾（Jev）
+
+# 把新聞或節目逐字稿（.txt）上傳到 transcripts/ 資料夾就會自動執行：
+# Jev 判斷講者對每檔股票有沒有提出實質的基本面論據，結果推到 Telegram。
+# 不會自動改 watchlist.yaml；候選要你補上理由與推翻條件後自己加入。
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'transcripts/**/*.txt'
+  workflow_dispatch:
+    inputs:
+      file:
+        description: '要重新判斷的檔案路徑（例如 transcripts/節目_1016.txt）'
+        required: true
+        default: ''
+
+permissions:
+  contents: read
+
+jobs:
+  intake:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout 程式碼
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2          # 比對這次 push 新增／修改了哪些逐字稿
+
+      - name: Checkout 股票名稱表（data 分支）
+        uses: actions/checkout@v4
+        continue-on-error: true
+        with:
+          ref: data
+          path: data-store
+          sparse-checkout: meta
+
+      - name: 設定 Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: 安裝套件
+        run: pip install -r requirements.txt
+
+      - name: Jev 判斷
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID:   ${{ secrets.TELEGRAM_CHAT_ID }}
+          TYPESAFE_API_KEY:   ${{ secrets.TYPESAFE_API_KEY }}
+          JEV_DAILY_LIMIT:    '50'           # 每次執行最多送幾檔給 Jev
+          DATA_DIR: data-store
+          INPUT_FILE: ${{ github.event.inputs.file }}
+          PYTHONUNBUFFERED: '1'
+        run: |
+          if [ -n "$INPUT_FILE" ]; then
+            files="$INPUT_FILE"
+          else
+            files=$(git -c core.quotepath=false diff --name-only --diff-filter=AM HEAD~1 HEAD -- transcripts/ || true)
+          fi
+          echo "處理：$files"
+          [ -n "$files" ] || { echo "沒有新的逐字稿"; exit 0; }
+          IFS=$'\n'; python watch_intake.py $files

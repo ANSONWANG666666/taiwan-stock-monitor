@@ -64,9 +64,19 @@ jobs:
             screener_status.json
             jev_news_cache.json
             jev_budget.json
+            watch_card_state.json
           key: intraday-${{ github.run_id }}
           restore-keys: |
             intraday-
+
+      # 只在 09:30 前、交易日、當天還沒推過時推播；讀前一天收盤後存的 state/market_temp.json
+      - name: 開盤前市場溫度卡（觀察名單）
+        continue-on-error: true
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID:   ${{ secrets.TELEGRAM_CHAT_ID }}
+          WATCH_STATE_DIR:    data-store/state
+        run: python watch_alert.py pre
 
       - name: 盤中監控（持續到收盤後）
         env:

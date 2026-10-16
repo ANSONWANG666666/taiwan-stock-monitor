@@ -1,0 +1,60 @@
+# 觀察名單（自己維護）：價格異常與回檔提醒、每週覆盤用。在 GitHub 網頁上編輯後按 Commit changes。
+#
+# 和 holdings.yaml 不同：holdings.yaml 是型態策略的進出場；這裡是你研究過、
+# 想長期追蹤的股票，觸發時只提醒「去檢視」，並附上你當初寫的理由與推翻條件。
+#
+# 欄位：
+#   code          股票代號（字串，加引號；上市上櫃都可以）
+#   name          名稱
+#   added         加入日期
+#   source        論點來源（自行研究、某節目、某報告）
+#   thesis        核心投資理由：要有具體數字（營收、毛利率、訂單、產能…）
+#   invalidation  推翻條件
+#     text:       程式無法判斷的條件，每週覆盤會逐條問你本週是否發生
+#     rules:      程式每天收盤後自動檢查，觸發會立即推播
+#       - {type: close_below, value: 950}            收盤跌破關鍵支撐價
+#       - {type: break_ma, days: 200}                收盤在 N 日均線之下
+#       - {type: foreign_net_sell_streak, days: 10}  外資連續 N 日賣超（FinMind）
+#       - {type: drawdown_from_high, pct: 30}        自一年高點回檔 ≥ N%
+#   holding       {shares: 股數}（1 張 = 1000 股）；有填才會用持股市值計算週覆盤報酬
+#
+settings:
+  cooldown_hours: 72            # 同一檔、同一類提醒 72 小時內不重發（等級升高例外）
+  ladder:                       # 分級提醒（以參考股的波動度為基準，其他股票自動依波動倍數放大縮小）
+    l1_dd20: 5                  # 第一級：自 20 日高點回檔 5%（日常關注）
+    l2_dd20: 10                 # 第二級：自 20 日高點回檔 10%（深度檢視）
+    l3_dd252: 20                # 第三級：自一年高點回檔 20%（重大回檔警報）
+    l3_break_ma200: true        #         或收盤跌破 200 日均線
+  vol_scale:
+    enabled: true
+    reference: "2330"           # 上面的數字對應這檔的波動度
+    min_mult: 0.7
+    max_mult: 2.5
+  other_alerts:
+    ma200_hot_dev: 30           # 正乖離 200MA ≥ 30%（× 波動倍數）→ 過熱提醒
+    volume_spike_mult: 2.0      # 成交量 ≥ 20 日均量 2 倍
+    squeeze_pct: 5              # 布林通道寬度落在一年內最低 5%
+  # 哪些提醒附 Jev 新聞查證（drawdown1/2/3、volume_spike、invalidation、ma200_hot、squeeze）
+  jev_news_for: [drawdown2, drawdown3, invalidation, volume_spike]
+  hy_spread_polarity: contrarian  # contrarian：信用利差擴大加分（逢恐慌加碼）；risk_off：利差擴大扣分
+
+benchmark: "0050"               # 週覆盤比較的大盤 ETF
+
+# 觀察標的寫在下面（每檔以「  - code:」開頭，縮排用空格）。
+# 範例：刪掉每行開頭的「# 」就會生效，理由請換成你自己的。
+watchlist:
+#   - code: "2330"
+#     name: 台積電
+#     added: 2026-10-16
+#     source: 自行研究
+#     thesis: >-
+#       N2 量產後先進製程占營收比重超過 7 成，毛利率維持 58% 以上，CoWoS 產能明年再增 5 成
+#     invalidation:
+#       text:
+#         - 法說會下修全年營收或毛利率指引
+#         - 主要 AI 客戶砍單或轉單
+#       rules:
+#         - {type: close_below, value: null}
+#         - {type: break_ma, days: 200}
+#         - {type: foreign_net_sell_streak, days: 10}
+#     holding: {shares: 0}
