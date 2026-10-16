@@ -142,6 +142,7 @@ def parse_item(item: dict) -> Optional[dict]:
 
     return {
         "symbol":    item.get("c", ""),
+        "time":      str(item.get("t") or ""),       # 最近一筆成交時間 HH:MM:SS
         "name":      item.get("n", ""),
         "price":     price,
         "prev":      f(item.get("y")),
@@ -188,7 +189,10 @@ def detect_alerts(snap: dict, vol_hist: List[int], interval_vol: int) -> List[di
     thresholds = get_thresholds(price)
 
     # 2.1 單筆成交金額大單
-    if snap["trade_amt"] >= thresholds["min_trade_amt"]:
+    # 開盤（09:00）與收盤（13:25 後）是集合競價：所有委託一次撮合，「單筆」量其實是整段競價的量，不算大單
+    t = snap.get("time", "")
+    auction = bool(t) and (t < "09:00:10" or t >= "13:25:00")
+    if snap["trade_amt"] >= thresholds["min_trade_amt"] and not auction:
         alerts_l2.append({
             "type": "TRADE_AMT",
             "emoji": "💰",
@@ -275,8 +279,16 @@ def format_alert(snap: dict, events: List[dict], pct: float, news_block: str = "
 
 
 # ── 主程式 ────────────────────────────────────────────────────────────
+def in_session(t: datetime) -> bool:
+    """平日 09:00–13:30 才有連續交易；盤後抓到的是收盤資料"""
+    return t.weekday() < 5 and (9, 0) <= (t.hour, t.minute) <= (13, 30)
+
+
 def main():
     logger.info("=== 台股大單監控 v3 ===")
+    if not in_session(datetime.now(TZ)) and os.environ.get("FORCE_MONITOR") != "1":
+        logger.info("非交易時段（09:00–13:30），不推播；測試請設定 FORCE_MONITOR=1")
+        return
     state     = load_state()
     cooldowns = state.get("_cooldowns", {})
     now_ts    = datetime.now(TZ).timestamp()
