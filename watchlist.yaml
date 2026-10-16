@@ -43,18 +43,18 @@ benchmark: "0050"               # 週覆盤比較的大盤 ETF
 # 觀察標的寫在下面（每檔以「  - code:」開頭，縮排用空格）。
 # 範例：刪掉每行開頭的「# 」就會生效，理由請換成你自己的。
 watchlist:
-  - code: "3017"
-    name: 奇鋐
-    added: 2026-10-16
-    source: 自行研究
-    thesis: >-
-      AI 伺服器水冷板出貨占營收由 2 成升至 4 成，毛利率較氣冷高約 5 個百分點
-    invalidation:
-      text:
-        - 水冷滲透率不如預期
-        - 毛利率連續兩季下滑
-      rules:
-        - {type: close_below, value: 950}
-        - {type: break_ma, days: 200}
-        - {type: foreign_net_sell_streak, days: 10}
-    holding: {shares: 0}
+#   - code: "2330"
+#     name: 台積電
+#     added: 2026-10-16
+#     source: 自行研究
+#     thesis: >-
+#       N2 量產後先進製程占營收比重超過 7 成，毛利率維持 58% 以上，CoWoS 產能明年再增 5 成
+#     invalidation:
+#       text:
+#         - 法說會下修全年營收或毛利率指引
+#         - 主要 AI 客戶砍單或轉單
+#       rules:
+#         - {type: close_below, value: null}
+#         - {type: break_ma, days: 200}
+#         - {type: foreign_net_sell_streak, days: 10}
+#     holding: {shares: 0}
