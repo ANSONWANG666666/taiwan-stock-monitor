@@ -63,3 +63,81 @@ watchlist:
 #         - {type: break_ma, days: 200}
 #         - {type: foreign_net_sell_streak, days: 10}
 #     holding: {shares: 0}
+
+  # ── 2026-10-19 加入：CMoney 不敗存股術〈AI 伺服器資本支出〉文章點名 ──
+  # 理由與推翻條件取自文章，請改成你自己的研究後刪掉 auto: true
+  - code: "2330"
+    name: 台積電
+    added: 2026-10-19
+    source: CMoney 不敗存股術 訂閱文章（2026-10-19）
+    thesis: >-
+      AI 晶片代工龍頭，直接受惠 CSP 資本支出擴張。TrendForce 預估 2026 年 9 大 CSP 資本支出約 9,570 億美元、2027 年年增 60% 達 1.5 兆美元；Tier-2 資料中心與主權 AI 專案也在加速拉貨。法人預估 2027 年獲利仍至少成長 20%。
+    invalidation:
+      text:
+        - CSP 業者下修資本支出，或 TrendForce 下修 2027 年成長預估
+        - 法人下修 2026／2027 年獲利預估，使本益比不再低於歷史平均
+        - 零組件缺貨漲價壓縮毛利率
+      rules:
+        - {type: break_ma, days: 200}
+        - {type: foreign_net_sell_streak, days: 10}
+    auto: true
+  - code: "2317"
+    name: 鴻海
+    added: 2026-10-19
+    source: CMoney 不敗存股術 訂閱文章（2026-10-19）
+    thesis: >-
+      AI 伺服器組裝主要供應商（目前股價貼近 200 日線，+0.4%）。TrendForce 預估 2026 年 9 大 CSP 資本支出約 9,570 億美元、2027 年年增 60% 達 1.5 兆美元；Tier-2 資料中心與主權 AI 專案也在加速拉貨。法人預估 2027 年獲利仍至少成長 20%。
+    invalidation:
+      text:
+        - CSP 業者下修資本支出，或 TrendForce 下修 2027 年成長預估
+        - 法人下修 2026／2027 年獲利預估，使本益比不再低於歷史平均
+        - 零組件缺貨漲價壓縮毛利率
+      rules:
+        - {type: break_ma, days: 200}
+        - {type: foreign_net_sell_streak, days: 10}
+    auto: true
+  - code: "2382"
+    name: 廣達
+    added: 2026-10-19
+    source: CMoney 不敗存股術 訂閱文章（2026-10-19）
+    thesis: >-
+      AI 伺服器 ODM，文章認為預估本益比低於歷史平均。TrendForce 預估 2026 年 9 大 CSP 資本支出約 9,570 億美元、2027 年年增 60% 達 1.5 兆美元；Tier-2 資料中心與主權 AI 專案也在加速拉貨。法人預估 2027 年獲利仍至少成長 20%。
+    invalidation:
+      text:
+        - CSP 業者下修資本支出，或 TrendForce 下修 2027 年成長預估
+        - 法人下修 2026／2027 年獲利預估，使本益比不再低於歷史平均
+        - 零組件缺貨漲價壓縮毛利率
+      rules:
+        - {type: drawdown_from_high, pct: 35}     # 已在 200 日線下（−1.3%），改用再跌一段才觸發
+        - {type: foreign_net_sell_streak, days: 10}
+    auto: true
+  - code: "3231"
+    name: 緯創
+    added: 2026-10-19
+    source: CMoney 不敗存股術 訂閱文章（2026-10-19）
+    thesis: >-
+      AI 伺服器 ODM／主機板，文章認為預估本益比低於歷史平均。TrendForce 預估 2026 年 9 大 CSP 資本支出約 9,570 億美元、2027 年年增 60% 達 1.5 兆美元；Tier-2 資料中心與主權 AI 專案也在加速拉貨。法人預估 2027 年獲利仍至少成長 20%。
+    invalidation:
+      text:
+        - CSP 業者下修資本支出，或 TrendForce 下修 2027 年成長預估
+        - 法人下修 2026／2027 年獲利預估，使本益比不再低於歷史平均
+        - 零組件缺貨漲價壓縮毛利率
+      rules:
+        - {type: break_ma, days: 200}
+        - {type: foreign_net_sell_streak, days: 10}
+    auto: true
+  - code: "2368"
+    name: 金像電
+    added: 2026-10-19
+    source: CMoney 不敗存股術 訂閱文章（2026-10-19）
+    thesis: >-
+      AI 伺服器高階 PCB；文章特別提醒目前評價相對昂貴。TrendForce 預估 2026 年 9 大 CSP 資本支出約 9,570 億美元、2027 年年增 60% 達 1.5 兆美元；Tier-2 資料中心與主權 AI 專案也在加速拉貨。法人預估 2027 年獲利仍至少成長 20%。
+    invalidation:
+      text:
+        - CSP 業者下修資本支出，或 TrendForce 下修 2027 年成長預估
+        - 法人下修 2026／2027 年獲利預估，使本益比不再低於歷史平均
+        - 零組件缺貨漲價壓縮毛利率
+      rules:
+        - {type: break_ma, days: 200}
+        - {type: foreign_net_sell_streak, days: 10}
+    auto: true
