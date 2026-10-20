@@ -1,0 +1,4 @@
+﻿ts,date,source,slot,code,name,price,pct,score,vol_ratio,breakout,strong_vol,near_low,rise_from_low,streak,alerts,news_verdict,news_net,news_n_relevant,news_top,news_top_rumor,ret_5d,ret_20d,idx_5d,idx_20d,excess_5d,excess_20d,industry,sub_industry,concepts
+2026-10-20T15:11:24+08:00,2026-10-20,watch,L1,2330,台積電,2405.00,-0.62,,,,,,,,自 20 日高點回檔 7.0%（門檻 5.0%）,unchecked,,,,,,,,,,,,,
+2026-10-20T15:11:26+08:00,2026-10-20,watch,L1,2382,廣達,320.50,1.91,,,,,,,,自 20 日高點回檔 7.0%（門檻 6.1%，已依波動度 ×1.23 校正）,unchecked,,,,,,,,,,,,,
+2026-10-20T15:11:28+08:00,2026-10-20,watch,爆量,3231,緯創,189.00,5.00,,,,,,,,"成交量 83,442 張，為 20 日均量 2.2 倍（上漲日）",confirmed_positive,0.3446,6,緯創3月營收創單月新高 首季業績寫歷年單季最強,0,,,,,,,,,
