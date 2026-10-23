@@ -428,7 +428,8 @@ def build_watch(series: Dict[str, SimpleNamespace], stock_groups: Dict[str, List
 def split_signals(kept: List[dict], strict_groups: set, market_ok: bool, cfg: Config = CFG):
     """依回測結果分流：
     · 列進場：ACTIVE_PATTERNS 的型態，且（族群從嚴）、（大盤在 20MA 之上），每種型態取分數前 N 檔
-    · 觀察用：其他型態（回測不佳），只列名稱
+    · 觀察用：OBSERVE_PATTERNS 的型態（回測不佳），只列名稱
+    · 其他型態（黑飛舞）：直接略過
     回傳 (進場, 觀察, 被濾網擋下的檔數說明)"""
     active = cfg.active_patterns
     entries, observe = [], []
@@ -436,7 +437,8 @@ def split_signals(kept: List[dict], strict_groups: set, market_ok: bool, cfg: Co
     count: Dict[str, int] = {}
     for s in kept:                                    # kept 已依分數排序
         if s["pattern"] not in active:
-            observe.append(s)
+            if s["pattern"] in cfg.observe_patterns:
+                observe.append(s)
             continue
         if cfg.SCREEN_STRICT_GROUP and not any(g in strict_groups for g in s["groups"]):
             held_back["group"] += 1
