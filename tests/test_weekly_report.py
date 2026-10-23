@@ -63,7 +63,7 @@ def test_full_report(tmp_path):
     assert msg.index("型態選股（目前推播）") < msg.index("已停推、仍在追蹤")
     tri_line = next(l for l in msg.split("\n") if "三角收斂・列進場" in l)
     assert "5 筆（樣本不足）" in tri_line
-    assert "黑飛舞・觀察" in msg
+    assert "黑飛舞・觀察" not in msg                          # 已停止觀察
     # 停推的訊號一行一組
     s3 = next(l for l in msg.split("\n") if "量價齊揚 3/3 分" in l)
     assert "40 筆" in s3 and "20日" in s3 and "樣本不足" not in s3.split("｜")[0]

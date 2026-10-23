@@ -146,7 +146,7 @@ def build_report(rows: List[dict], today: datetime) -> str:
     tri = [r for r in pat if r["source"] == ACTIVE]
     pl += [x for x in (one_line("三角收斂・列進場", [r for r in tri if r.get("slot") != "觀察"]),
                        one_line("穿山二龍・觀察", [r for r in pat if r["source"] == "pattern_chuaner"]),
-                       one_line("黑飛舞・觀察", [r for r in pat if r["source"] == "pattern_hfw"])) if x]
+                       ) if x]                       # 黑飛舞已停止觀察（10/23），不再列出
     if pl:
         lines += pl
     else:

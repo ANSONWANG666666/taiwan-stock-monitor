@@ -144,14 +144,14 @@ def _e2e_frames(index_bars=None):
     return df, industry
 
 
-def test_screen_default_heifeiwu_is_observe_only(tmp_path, monkeypatch):
+def test_screen_default_heifeiwu_dropped(tmp_path, monkeypatch):
     df, industry = _e2e_frames()
     monkeypatch.setattr(screener, "CONCEPT_FILE", tmp_path / "none.yaml")
     res = screener.screen(df, industry, {}, held={"1111"})
     assert res["strong_groups"]["測試族群"]["strong_n"] == 4
-    assert res["candidates"] == [] and [s["pattern"] for s in res["observe"]] == ["黑飛舞"]
+    assert res["candidates"] == [] and res["observe"] == []      # 黑飛舞：不列進場、也不列觀察
     msg = screener.format_report(res)
-    assert "觀察用" in msg and "飛舞 1111" in msg and "【加碼】" not in msg
+    assert "飛舞 1111" not in msg and "【加碼】" not in msg
     assert "黑飛舞" not in res["watch"].get("2222", {}).get("tags", {})
 
 
@@ -185,7 +185,7 @@ def test_split_signals():
     kept = [_sig("1", "三角收斂", 90), _sig("2", "三角收斂", 80, ("B",)), _sig("3", "三角收斂", 70),
             _sig("4", "三角收斂", 60), _sig("5", "穿山二龍", 99), _sig("6", "黑飛舞", 50)]
     e, o, hb = screener.split_signals(kept, {"A"}, True, cfg)
-    assert [s["code"] for s in e] == ["1", "3"] and [s["code"] for s in o] == ["5", "6"]
+    assert [s["code"] for s in e] == ["1", "3"] and [s["code"] for s in o] == ["5"]   # 黑飛舞直接略過
     assert hb == {"market": 0, "group": 1, "top_n": 1}
     e, o, hb = screener.split_signals(kept, {"A"}, False, cfg)
     assert e == [] and hb["market"] == 3

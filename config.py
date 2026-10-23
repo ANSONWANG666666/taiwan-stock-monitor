@@ -76,7 +76,8 @@ class Config:
     BT_TOP_N: int = 5                 # 濾網「每日前 N 檔」：每天每種型態只取分數最高的 N 檔（與 SCREEN_TOP_N 一致）
 
     # ── 每日推播：哪些型態列進場、用哪些濾網（依 2 年回測結果）──
-    ACTIVE_PATTERNS: str = "三角收斂"  # 列進場建議的型態（逗號分隔）；其餘只列「觀察用」
+    ACTIVE_PATTERNS: str = "三角收斂"  # 列進場建議的型態（逗號分隔）
+    OBSERVE_PATTERNS: str = "穿山二龍" # 只列名稱的「觀察用」型態；不在這兩項裡的（黑飛舞：回測勝率太差）不推播也不記錄
     SCREEN_MARKET_FILTER: bool = True  # 加權指數收盤在 20MA 之下時不列進場
     SCREEN_STRICT_GROUP: bool = True   # 族群從嚴：成員要「站上 20MA 且 5 日跑贏大盤」
     SCREEN_TOP_N: int = 5              # 每種型態每天最多列幾檔進場
@@ -95,6 +96,10 @@ class Config:
     RT_MIN_ELAPSED_MIN: int = 30      # 開盤 N 分鐘後才用「預估全日量」判斷量縮
     RT_COOLDOWN_MIN: int = 30         # 同一檔同一訊號 N 分鐘內不重複
     RT_WATCH_FORMING: bool = False    # 是否也盯「還在整理、尚未突破」的型態（未經回測，預設不盯）
+
+    @property
+    def observe_patterns(self) -> tuple:
+        return tuple(p.strip() for p in str(self.OBSERVE_PATTERNS).split(",") if p.strip())
 
     @property
     def active_patterns(self) -> tuple:
