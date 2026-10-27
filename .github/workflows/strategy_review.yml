@@ -1,0 +1,64 @@
+name: 每月策略檢討
+
+# 每月 1 日收盤後：用最新歷史日K比較「現行規則」與事先固定的候選修改，只產生報告，不改任何設定。
+# 結果：Telegram 摘要、本次執行摘要、data 分支 review/YYYY-MM.md 與 review/latest.json
+# 每月 2 日的 Claude 排程會讀 latest.json，有候選通過全部門檻才開 PR 給你確認。
+on:
+  schedule:
+    - cron: '13 10 1 * *'     # 每月 1 日 18:13
+    - cron: '43 1 2 * *'      # 備援：每月 2 日 09:43（同月已檢討過會自動略過）
+  workflow_dispatch:
+    inputs:
+      force:
+        description: '本月已檢討過仍重跑（填 1）'
+        required: false
+        default: ''
+
+concurrency:
+  group: strategy-review
+  cancel-in-progress: false
+
+permissions:
+  contents: write   # 報告寫回 data 分支
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout 程式碼
+        uses: actions/checkout@v4
+
+      - name: Checkout 歷史資料（data 分支）
+        uses: actions/checkout@v4
+        with:
+          ref: data
+          path: data-store
+
+      - name: Checkout 訊號紀錄簿（journal 分支）
+        uses: actions/checkout@v4
+        continue-on-error: true
+        with:
+          ref: journal
+          path: journal-data
+
+      - name: 設定 Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: 安裝套件
+        run: pip install -r requirements.txt
+
+      - name: 執行策略檢討
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID:   ${{ secrets.TELEGRAM_CHAT_ID }}
+          DATA_DIR: data-store
+          REVIEW_DIR: data-store/review
+          JOURNAL_DIR: journal-data
+          AUTO_COMMIT: '1'
+          FORCE_REVIEW: ${{ github.event.inputs.force }}
+          PYTHONUNBUFFERED: '1'
+        run: python strategy_review.py
