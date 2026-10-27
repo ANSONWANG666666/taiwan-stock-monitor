@@ -197,6 +197,7 @@ def test_run_post_pushes_card_with_news_and_records_journal(env):
     news = lambda a, s: (asked.append(a.jev_key) or ({"verdict": "confirmed_negative", "net": -0.3, "top": []},
                                                      "\n📰 <b>新聞查證（Jev）</b>：🔻 有證實的利空消息"))
     now = datetime(2026, 10, 16, 15, 20, tzinfo=TZ)
+    wa._write_json(wa.COOLDOWN_FILE, {"_known": ["3017", "8888"]})        # 已在名單中的股票照常逐檔推播
     res = wa.run_post(datetime(2026, 10, 16).date(), now=now, df=df, ext=NO_EXT, news=news,
                       foreign=lambda c, d: pd.Series(dtype=float), send=lambda m: sent.append(m) or True)
     assert res["sent"] >= 1
@@ -419,3 +420,26 @@ def test_auto_card_and_review_flags(env):
                      "invalidation": {"rules": []}}], market_df(300), pd.Series(dtype=float), "0050",
                    datetime(2026, 10, 16).date(), {}, foreign=lambda c, d: pd.Series(dtype=float))
     assert "Jev 自動收錄（2026-10-16）" in msg
+
+
+
+def test_new_watch_items_get_one_baseline_message(env):
+    n = 300
+    kiq = np.r_[path_series(n - 1, 300, 0.001, 0.01, seed=5), [0]]
+    kiq[-1] = kiq[-21:-1].max() * 0.88                                      # 回檔 12% → 第二級
+    df = market_df(n, special={"3017": kiq})
+    sent = []
+    now = datetime(2026, 10, 16, 15, 20, tzinfo=TZ)
+    res = wa.run_post(datetime(2026, 10, 16).date(), now=now, df=df, ext=NO_EXT, news=lambda a, s: (None, ""),
+                      foreign=lambda c, d: pd.Series(dtype=float), send=lambda m: sent.append(m) or True)
+    base = [m for m in sent if "觀察名單新加入" in m]
+    assert res["sent"] == 0 and len(base) == 1 and "奇鋐 3017" in base[0] and "第二級" in base[0]
+    assert not any("核心投資理由" in m for m in sent)                       # 沒有逐檔卡片
+    cd = json.loads(wa.COOLDOWN_FILE.read_text(encoding="utf-8"))
+    assert "3017" in cd["_known"] and "3017|drawdown" in cd
+    # 隔天同樣狀態：冷卻中，不再推
+    df2 = df.copy()
+    res2 = wa.run_post(datetime(2026, 10, 17).date(), now=now + timedelta(days=1), df=df2, ext=NO_EXT,
+                       news=lambda a, s: (None, ""), foreign=lambda c, d: pd.Series(dtype=float),
+                       send=lambda m: sent.append(m) or True, force=True)
+    assert res2["sent"] == 0 and len([m for m in sent if "觀察名單新加入" in m]) == 1
