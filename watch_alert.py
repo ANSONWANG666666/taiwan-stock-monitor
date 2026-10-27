@@ -612,6 +612,10 @@ def run_post(end: date, now: Optional[datetime] = None, df: Optional[pd.DataFram
     ref = series_of(df, ref_code)
     ref = add_indicators(ref) if not ref.empty else None
     sent = 0
+    # 新加入的股票：第一次只記下「目前狀態」合併成一則，不逐檔推播（避免一次加很多檔時洗版），
+    # 之後狀態有變化（冷卻期過、等級升高、新觸發）才個別提醒
+    known = set(cd.get("_known") or {k.split("|")[0] for k in cd if not k.startswith("_")})
+    baseline: List[str] = []
     for item in items:
         s = series_of(df, item["code"])
         if len(s) < 30:
@@ -624,6 +628,13 @@ def run_post(end: date, now: Optional[datetime] = None, df: Optional[pd.DataFram
         if hits:
             b = _base(item["code"], s)
             alerts.append(Alert(kind="invalidation", level=0, reason="；".join(hits), extra={"hits": hits}, **b))
+        if item["code"] not in known:
+            for a in alerts:
+                mark_sent(cd, a, now)
+            nm = html.escape(str(item.get("name") or (alerts[0].name if alerts else item["code"])))
+            st = "；".join(f"{a.title}：{html.escape(a.reason)}" for a in alerts) or "目前沒有觸發任何條件"
+            baseline.append(f"• <b>{nm} {item['code']}</b>　{s['Raw'].iloc[-1]:,.2f}\n  {st}")
+            continue
         for a in alerts:
             if not should_send(cd, a, settings["cooldown_hours"], now):
                 logger.info("冷卻中略過：%s %s", a.code, a.title)
@@ -634,6 +645,12 @@ def run_post(end: date, now: Optional[datetime] = None, df: Optional[pd.DataFram
                 sent += 1
                 journal.record("watch", a.code, item.get("name") or a.name, slot=a.slot, price=a.price,
                                pct=a.pct, alerts=a.reason, news=result, date=data_date)
+    if baseline:
+        msg = (f"🆕 <b>觀察名單新加入 {len(baseline)} 檔｜{data_date} 目前狀態</b>\n"
+               "（第一次只列狀態，之後有變化才會個別提醒）\n\n" + "\n".join(baseline))
+        for part in [msg[i:i + 3900] for i in range(0, len(msg), 3900)]:
+            send(part)
+    cd["_known"] = sorted(known | {w["code"] for w in items})
     n_digest = 0
     if (settings.get("digest") or {}).get("enabled", True):
         try:

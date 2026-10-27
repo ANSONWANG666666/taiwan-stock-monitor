@@ -141,3 +141,258 @@ watchlist:
         - {type: break_ma, days: 200}
         - {type: foreign_net_sell_streak, days: 10}
     auto: true
+
+  # ── 2026-10-27 Anson 指定加入：理由與推翻條件請自行補上 ──
+  - code: "3017"
+    name: 奇鋐
+    added: 2026-10-27
+    source: Anson 指定加入
+    thesis: （待補：寫下你想追蹤的理由，最好有具體數字，例如營收、毛利率、訂單）
+    invalidation:
+      text:
+        - （待補：什麼情況發生代表看錯了）
+      rules:
+        - {type: break_ma, days: 200}
+        - {type: foreign_net_sell_streak, days: 10}
+  - code: "3324"
+    name: 雙鴻
+    added: 2026-10-27
+    source: Anson 指定加入
+    thesis: （待補：寫下你想追蹤的理由，最好有具體數字，例如營收、毛利率、訂單）
+    invalidation:
+      text:
+        - （待補：什麼情況發生代表看錯了）
+      rules:
+        - {type: break_ma, days: 200}
+        - {type: foreign_net_sell_streak, days: 10}
+  - code: "8996"
+    name: 高力
+    added: 2026-10-27
+    source: Anson 指定加入
+    thesis: （待補：寫下你想追蹤的理由，最好有具體數字，例如營收、毛利率、訂單）
+    invalidation:
+      text:
+        - （待補：什麼情況發生代表看錯了）
+      rules:
+        - {type: break_ma, days: 200}
+        - {type: foreign_net_sell_streak, days: 10}
+  - code: "3653"
+    name: 健策
+    added: 2026-10-27
+    source: Anson 指定加入
+    thesis: （待補：寫下你想追蹤的理由，最好有具體數字，例如營收、毛利率、訂單）
+    invalidation:
+      text:
+        - （待補：什麼情況發生代表看錯了）
+      rules:
+        - {type: break_ma, days: 200}
+        - {type: foreign_net_sell_streak, days: 10}
+  - code: "6139"
+    name: 亞翔
+    added: 2026-10-27
+    source: Anson 指定加入
+    thesis: （待補：寫下你想追蹤的理由，最好有具體數字，例如營收、毛利率、訂單）
+    invalidation:
+      text:
+        - （待補：什麼情況發生代表看錯了）
+      rules:
+        - {type: drawdown_from_high, pct: 45}     # 已在 200 日線之下，改用再跌一段才觸發
+        - {type: foreign_net_sell_streak, days: 10}
+  - code: "2404"
+    name: 漢唐
+    added: 2026-10-27
+    source: Anson 指定加入
+    thesis: （待補：寫下你想追蹤的理由，最好有具體數字，例如營收、毛利率、訂單）
+    invalidation:
+      text:
+        - （待補：什麼情況發生代表看錯了）
+      rules:
+        - {type: break_ma, days: 200}
+        - {type: foreign_net_sell_streak, days: 10}
+  - code: "5536"
+    name: 聖暉*
+    added: 2026-10-27
+    source: Anson 指定加入
+    thesis: （待補：寫下你想追蹤的理由，最好有具體數字，例如營收、毛利率、訂單）
+    invalidation:
+      text:
+        - （待補：什麼情況發生代表看錯了）
+      rules:
+        - {type: drawdown_from_high, pct: 60}     # 已在 200 日線之下，改用再跌一段才觸發
+        - {type: foreign_net_sell_streak, days: 10}
+  - code: "6196"
+    name: 帆宣
+    added: 2026-10-27
+    source: Anson 指定加入
+    thesis: （待補：寫下你想追蹤的理由，最好有具體數字，例如營收、毛利率、訂單）
+    invalidation:
+      text:
+        - （待補：什麼情況發生代表看錯了）
+      rules:
+        - {type: break_ma, days: 200}
+        - {type: foreign_net_sell_streak, days: 10}
+  - code: "6213"
+    name: 聯茂
+    added: 2026-10-27
+    source: Anson 指定加入
+    thesis: （待補：寫下你想追蹤的理由，最好有具體數字，例如營收、毛利率、訂單）
+    invalidation:
+      text:
+        - （待補：什麼情況發生代表看錯了）
+      rules:
+        - {type: break_ma, days: 200}
+        - {type: foreign_net_sell_streak, days: 10}
+  - code: "8039"
+    name: 台虹
+    added: 2026-10-27
+    source: Anson 指定加入
+    thesis: （待補：寫下你想追蹤的理由，最好有具體數字，例如營收、毛利率、訂單）
+    invalidation:
+      text:
+        - （待補：什麼情況發生代表看錯了）
+      rules:
+        - {type: break_ma, days: 200}
+        - {type: foreign_net_sell_streak, days: 10}
+  - code: "6672"
+    name: 騰輝電子-KY
+    added: 2026-10-27
+    source: Anson 指定加入
+    thesis: （待補：寫下你想追蹤的理由，最好有具體數字，例如營收、毛利率、訂單）
+    invalidation:
+      text:
+        - （待補：什麼情況發生代表看錯了）
+      rules:
+        - {type: break_ma, days: 200}
+        - {type: foreign_net_sell_streak, days: 10}
+  - code: "9945"
+    name: 潤泰新
+    added: 2026-10-27
+    source: Anson 指定加入
+    thesis: （待補：寫下你想追蹤的理由，最好有具體數字，例如營收、毛利率、訂單）
+    invalidation:
+      text:
+        - （待補：什麼情況發生代表看錯了）
+      rules:
+        - {type: break_ma, days: 200}
+        - {type: foreign_net_sell_streak, days: 10}
+  - code: "3354"
+    name: 律勝
+    added: 2026-10-27
+    source: Anson 指定加入
+    thesis: （待補：寫下你想追蹤的理由，最好有具體數字，例如營收、毛利率、訂單）
+    invalidation:
+      text:
+        - （待補：什麼情況發生代表看錯了）
+      rules:
+        - {type: break_ma, days: 200}
+        - {type: foreign_net_sell_streak, days: 10}
+  - code: "6269"
+    name: 台郡
+    added: 2026-10-27
+    source: Anson 指定加入
+    thesis: （待補：寫下你想追蹤的理由，最好有具體數字，例如營收、毛利率、訂單）
+    invalidation:
+      text:
+        - （待補：什麼情況發生代表看錯了）
+      rules:
+        - {type: break_ma, days: 200}
+        - {type: foreign_net_sell_streak, days: 10}
+  - code: "1815"
+    name: 富喬
+    added: 2026-10-27
+    source: Anson 指定加入
+    thesis: （待補：寫下你想追蹤的理由，最好有具體數字，例如營收、毛利率、訂單）
+    invalidation:
+      text:
+        - （待補：什麼情況發生代表看錯了）
+      rules:
+        - {type: break_ma, days: 200}
+        - {type: foreign_net_sell_streak, days: 10}
+  - code: "1802"
+    name: 台玻
+    added: 2026-10-27
+    source: Anson 指定加入
+    thesis: （待補：寫下你想追蹤的理由，最好有具體數字，例如營收、毛利率、訂單）
+    invalidation:
+      text:
+        - （待補：什麼情況發生代表看錯了）
+      rules:
+        - {type: break_ma, days: 200}
+        - {type: foreign_net_sell_streak, days: 10}
+  - code: "2468"
+    name: 華經
+    added: 2026-10-27
+    source: Anson 指定加入
+    thesis: （待補：寫下你想追蹤的理由，最好有具體數字，例如營收、毛利率、訂單）
+    invalidation:
+      text:
+        - （待補：什麼情況發生代表看錯了）
+      rules:
+        - {type: break_ma, days: 200}
+        - {type: foreign_net_sell_streak, days: 10}
+  - code: "2454"
+    name: 聯發科
+    added: 2026-10-27
+    source: Anson 指定加入
+    thesis: （待補：寫下你想追蹤的理由，最好有具體數字，例如營收、毛利率、訂單）
+    invalidation:
+      text:
+        - （待補：什麼情況發生代表看錯了）
+      rules:
+        - {type: break_ma, days: 200}
+        - {type: foreign_net_sell_streak, days: 10}
+  - code: "2476"
+    name: 鉅祥
+    added: 2026-10-27
+    source: Anson 指定加入
+    thesis: （待補：寫下你想追蹤的理由，最好有具體數字，例如營收、毛利率、訂單）
+    invalidation:
+      text:
+        - （待補：什麼情況發生代表看錯了）
+      rules:
+        - {type: break_ma, days: 200}
+        - {type: foreign_net_sell_streak, days: 10}
+  - code: "3338"
+    name: 泰碩
+    added: 2026-10-27
+    source: Anson 指定加入
+    thesis: （待補：寫下你想追蹤的理由，最好有具體數字，例如營收、毛利率、訂單）
+    invalidation:
+      text:
+        - （待補：什麼情況發生代表看錯了）
+      rules:
+        - {type: drawdown_from_high, pct: 40}     # 已在 200 日線之下，改用再跌一段才觸發
+        - {type: foreign_net_sell_streak, days: 10}
+  - code: "5469"
+    name: 瀚宇博
+    added: 2026-10-27
+    source: Anson 指定加入
+    thesis: （待補：寫下你想追蹤的理由，最好有具體數字，例如營收、毛利率、訂單）
+    invalidation:
+      text:
+        - （待補：什麼情況發生代表看錯了）
+      rules:
+        - {type: drawdown_from_high, pct: 45}     # 已在 200 日線之下，改用再跌一段才觸發
+        - {type: foreign_net_sell_streak, days: 10}
+  - code: "5243"
+    name: 乙盛-KY
+    added: 2026-10-27
+    source: Anson 指定加入
+    thesis: （待補：寫下你想追蹤的理由，最好有具體數字，例如營收、毛利率、訂單）
+    invalidation:
+      text:
+        - （待補：什麼情況發生代表看錯了）
+      rules:
+        - {type: drawdown_from_high, pct: 45}     # 已在 200 日線之下，改用再跌一段才觸發
+        - {type: foreign_net_sell_streak, days: 10}
+  - code: "3583"
+    name: 辛耘
+    added: 2026-10-27
+    source: Anson 指定加入
+    thesis: （待補：寫下你想追蹤的理由，最好有具體數字，例如營收、毛利率、訂單）
+    invalidation:
+      text:
+        - （待補：什麼情況發生代表看錯了）
+      rules:
+        - {type: drawdown_from_high, pct: 50}     # 已在 200 日線之下，改用再跌一段才觸發
+        - {type: foreign_net_sell_streak, days: 10}
