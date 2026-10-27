@@ -1,189 +1,177 @@
 {
- "date": "2026-10-22",
+ "date": "2026-10-27",
  "candidates": [],
  "observe": [
   {
    "pattern": "穿山二龍",
-   "entry_type": "收盤進場",
-   "base": 139.0,
-   "price": 139.0,
-   "swing_high": 155.0,
-   "swing_low": 74.0,
-   "pattern_high": 155.0,
-   "pattern_low": 120.0,
-   "a_rally": 1.0945945945945947,
-   "a_amp": 0.29166666666666674,
-   "rally_date": "2026-09-18",
-   "break_date": "2026-10-20",
-   "score": 82.8,
-   "reason": "第1階段漲 109%（08-11→09-18），10-20 跌破 20MA，今日紅K +4.1%站回",
-   "code": "6620",
-   "name": "漢達",
-   "date": "2026-10-22",
-   "market": "OTC",
-   "groups": [
-    "生技醫療"
-   ],
-   "targets": {
-    "rally": 215.07432432432432,
-    "amp": 159.27083333333334
-   },
-   "leader_of": []
-  },
-  {
-   "pattern": "黑飛舞",
-   "entry_type": "收盤進場",
-   "base": 92.4,
-   "price": 92.4,
-   "day0": "2026-10-21",
-   "day0_volume": 5921.0,
-   "score": 82.5,
-   "reason": "10-21 爆量黑K（6.2 倍均量），今日量縮至 55% 回測 5MA 守住",
-   "code": "3483",
-   "name": "力致",
-   "date": "2026-10-22",
-   "market": "OTC",
-   "groups": [
-    "電腦週邊"
-   ],
-   "action": "進場",
-   "leader_of": []
-  },
-  {
-   "pattern": "黑飛舞",
-   "entry_type": "收盤進場",
-   "base": 67.9,
-   "price": 67.9,
-   "day0": "2026-10-20",
-   "day0_volume": 11886.0,
-   "score": 80.6,
-   "reason": "10-20 爆量黑K（4.0 倍均量），今日量縮至 31% 回測 5MA 守住",
-   "code": "2033",
-   "name": "佳大",
-   "date": "2026-10-22",
+   "entry_type": "次日開盤進場",
+   "base": 328.5,
+   "price": 328.5,
+   "swing_high": 404.5,
+   "swing_low": 279.0,
+   "pattern_high": 404.5,
+   "pattern_low": 298.0,
+   "a_rally": 0.4498207885304659,
+   "a_amp": 0.35738255033557054,
+   "rally_date": "2026-08-13",
+   "break_date": "2026-10-13",
+   "score": 76.3,
+   "reason": "第1階段漲 45%（07-30→08-13），10-13 跌破 20MA，今日漲停站回",
+   "code": "2049",
+   "name": "上銀",
+   "date": "2026-10-27",
    "market": "TSE",
    "groups": [
-    "鋼鐵"
+    "電機機械"
    ],
-   "action": "進場",
+   "targets": {
+    "rally": 402.38306451612897,
+    "amp": 387.20008389261744
+   },
    "leader_of": []
   },
   {
    "pattern": "穿山二龍",
    "entry_type": "次日開盤進場",
-   "base": 96.2,
-   "price": 96.2,
-   "swing_high": 107.5,
-   "swing_low": 67.4,
-   "pattern_high": 107.5,
-   "pattern_low": 82.2,
-   "a_rally": 0.5949554896142433,
-   "a_amp": 0.3077858880778588,
-   "rally_date": "2026-09-03",
-   "break_date": "2026-10-05",
-   "score": 80.4,
-   "reason": "第1階段漲 59%（07-30→09-03），10-05 跌破 20MA，今日漲停站回",
-   "code": "2465",
-   "name": "麗臺",
-   "date": "2026-10-22",
+   "base": 1990.0,
+   "price": 1990.0,
+   "swing_high": 2565.0,
+   "swing_low": 1795.0,
+   "pattern_high": 2565.0,
+   "pattern_low": 1760.0,
+   "a_rally": 0.4289693593314763,
+   "a_amp": 0.45738636363636354,
+   "rally_date": "2026-08-20",
+   "break_date": "2026-10-06",
+   "score": 75.7,
+   "reason": "第1階段漲 43%（07-20→08-20），10-06 跌破 20MA，今日漲停站回",
+   "code": "7750",
+   "name": "新代",
+   "date": "2026-10-27",
    "market": "TSE",
    "groups": [
-    "電腦週邊"
+    "電機機械"
    ],
    "targets": {
-    "rally": 124.81735905044509,
-    "amp": 111.00450121654501
+    "rally": 2416.8245125348185,
+    "amp": 2445.0994318181815
    },
    "leader_of": []
   },
   {
    "pattern": "穿山二龍",
    "entry_type": "收盤進場",
-   "base": 55.1,
-   "price": 55.1,
-   "swing_high": 63.0,
-   "swing_low": 35.5,
-   "pattern_high": 63.0,
-   "pattern_low": 49.4,
-   "a_rally": 0.7746478873239437,
-   "a_amp": 0.2753036437246963,
+   "base": 75.5,
+   "price": 75.5,
+   "swing_high": 84.3,
+   "swing_low": 48.5,
+   "pattern_high": 84.3,
+   "pattern_low": 70.2,
+   "a_rally": 0.7381443298969073,
+   "a_amp": 0.2008547008547008,
    "rally_date": "2026-10-01",
-   "break_date": "2026-10-13",
-   "score": 76.8,
-   "reason": "第1階段漲 77%（07-29→10-01），10-13 跌破 20MA，今日紅K +8.0%站回",
-   "code": "8240",
-   "name": "華宏",
-   "date": "2026-10-22",
+   "break_date": "2026-10-22",
+   "score": 75.0,
+   "reason": "第1階段漲 74%（07-30→10-01），10-22 跌破 20MA，今日紅K +3.6%站回",
+   "code": "6425",
+   "name": "易發",
+   "date": "2026-10-27",
    "market": "OTC",
    "groups": [
-    "光電"
+    "電機機械"
    ],
    "targets": {
-    "rally": 76.44154929577466,
-    "amp": 62.684615384615384
+    "rally": 103.36494845360825,
+    "amp": 83.08226495726497
    },
    "leader_of": []
   },
   {
    "pattern": "穿山二龍",
    "entry_type": "收盤進場",
-   "base": 30.3,
-   "price": 30.3,
-   "swing_high": 31.75,
-   "swing_low": 22.3,
-   "pattern_high": 31.75,
-   "pattern_low": 26.85,
-   "a_rally": 0.42376681614349776,
-   "a_amp": 0.1824953445065176,
-   "rally_date": "2026-09-01",
-   "break_date": "2026-10-12",
-   "score": 65.3,
-   "reason": "第1階段漲 42%（07-30→09-01），10-12 跌破 20MA，今日紅K +7.3%站回",
-   "code": "5426",
-   "name": "振發",
-   "date": "2026-10-22",
-   "market": "OTC",
+   "base": 61.5,
+   "price": 61.5,
+   "swing_high": 65.3,
+   "swing_low": 42.2,
+   "pattern_high": 65.3,
+   "pattern_low": 54.8,
+   "a_rally": 0.5473933649289098,
+   "a_amp": 0.19160583941605847,
+   "rally_date": "2026-08-17",
+   "break_date": "2026-10-15",
+   "score": 69.3,
+   "reason": "第1階段漲 55%（07-30→08-17），10-15 跌破 20MA，今日紅K +7.1%站回",
+   "code": "4540",
+   "name": "全球傳動",
+   "date": "2026-10-27",
+   "market": "TSE",
    "groups": [
-    "電腦週邊"
+    "電機機械"
    ],
    "targets": {
-    "rally": 36.72006726457399,
-    "amp": 33.064804469273746
+    "rally": 78.33234597156398,
+    "amp": 67.3918795620438
+   },
+   "leader_of": []
+  },
+  {
+   "pattern": "穿山二龍",
+   "entry_type": "收盤進場",
+   "base": 43.4,
+   "price": 43.4,
+   "swing_high": 48.45,
+   "swing_low": 33.0,
+   "pattern_high": 48.45,
+   "pattern_low": 39.95,
+   "a_rally": 0.46818181818181825,
+   "a_amp": 0.2127659574468086,
+   "rally_date": "2026-09-04",
+   "break_date": "2026-09-22",
+   "score": 66.9,
+   "reason": "第1階段漲 47%（07-29→09-04），09-22 跌破 20MA，今日紅K +4.7%站回",
+   "code": "4510",
+   "name": "高鋒",
+   "date": "2026-10-27",
+   "market": "OTC",
+   "groups": [
+    "電機機械"
+   ],
+   "targets": {
+    "rally": 53.55954545454546,
+    "amp": 48.01702127659574
    },
    "leader_of": []
   }
  ],
  "held_back": {
-  "market": 2,
-  "group": 3,
+  "market": 6,
+  "group": 4,
   "top_n": 0
  },
  "market_ok": false,
  "rotations": [
-  "汽車：艾姆勒 連 3 天未創高，領頭羊換成 聯嘉投控（3717）",
-  "電腦週邊：大眾控 連 3 天未創高，領頭羊換成 神基（3005）",
-  "其他電子：友威科 連 3 天未創高，領頭羊換成 達航科技（4577）",
-  "金融保險：上海商銀 連 3 天未創高，領頭羊換成 彰銀（2801）"
+  "建材營造：工信 連 3 天未創高，領頭羊換成 國產（2504）",
+  "其他：裕慶-KY 連 3 天未創高，領頭羊換成 新鼎（5209）"
  ],
  "watch": {},
  "strong_groups": {
   "建材營造": {
-   "n": 17,
-   "strong_n": 13,
+   "n": 19,
+   "strong_n": 12,
    "strong": true,
-   "leader": "5521"
+   "leader": "2504"
   },
   "汽車": {
    "n": 15,
-   "strong_n": 9,
+   "strong_n": 8,
    "strong": true,
    "leader": "3717"
   },
   "其他": {
-   "n": 23,
-   "strong_n": 14,
+   "n": 24,
+   "strong_n": 15,
    "strong": true,
-   "leader": "6957"
+   "leader": "5209"
   },
   "紡織": {
    "n": 7,
@@ -192,86 +180,56 @@
    "leader": "1409"
   },
   "運動休閒": {
-   "n": 9,
-   "strong_n": 4,
+   "n": 10,
+   "strong_n": 5,
    "strong": true,
    "leader": "9904"
   },
-  "電子零組件": {
-   "n": 135,
-   "strong_n": 54,
-   "strong": true,
-   "leader": "5469"
-  },
   "電機機械": {
-   "n": 29,
-   "strong_n": 12,
+   "n": 30,
+   "strong_n": 17,
    "strong": true,
    "leader": "4566"
   },
-  "電器電纜": {
-   "n": 6,
-   "strong_n": 4,
-   "strong": true,
-   "leader": "1605"
-  },
   "生技醫療": {
-   "n": 32,
-   "strong_n": 18,
+   "n": 33,
+   "strong_n": 15,
    "strong": true,
    "leader": "6782"
   },
-  "化學": {
-   "n": 28,
-   "strong_n": 9,
-   "strong": true,
-   "leader": "1709"
-  },
   "鋼鐵": {
    "n": 19,
-   "strong_n": 18,
+   "strong_n": 16,
    "strong": true,
    "leader": "2006"
   },
   "綠能環保": {
    "n": 16,
-   "strong_n": 7,
+   "strong_n": 6,
    "strong": true,
    "leader": "5292"
   },
   "航運": {
    "n": 23,
-   "strong_n": 16,
+   "strong_n": 17,
    "strong": true,
    "leader": "2603"
   },
   "電腦週邊": {
-   "n": 61,
-   "strong_n": 31,
+   "n": 60,
+   "strong_n": 32,
    "strong": true,
    "leader": "3005"
   },
-  "半導體": {
-   "n": 158,
-   "strong_n": 57,
-   "strong": true,
-   "leader": "2379"
-  },
-  "其他電子": {
-   "n": 49,
-   "strong_n": 17,
-   "strong": true,
-   "leader": "4577"
-  },
   "通信網路": {
-   "n": 50,
-   "strong_n": 32,
+   "n": 51,
+   "strong_n": 20,
    "strong": true,
    "leader": "2412"
   },
   "光電": {
-   "n": 73,
-   "strong_n": 52,
+   "n": 72,
+   "strong_n": 32,
    "strong": true,
    "leader": "2466"
   },
@@ -282,7 +240,7 @@
    "leader": "2347"
   },
   "資訊服務": {
-   "n": 12,
+   "n": 13,
    "strong_n": 11,
    "strong": true,
    "leader": "2468"
@@ -300,17 +258,11 @@
    "leader": "2801"
   },
   "數位雲端": {
-   "n": 13,
-   "strong_n": 10,
+   "n": 12,
+   "strong_n": 9,
    "strong": true,
    "leader": "6925"
-  },
-  "概念:無人機": {
-   "n": 4,
-   "strong_n": 4,
-   "strong": true,
-   "leader": "3491"
   }
  },
- "n_universe": 869
+ "n_universe": 875
 }
