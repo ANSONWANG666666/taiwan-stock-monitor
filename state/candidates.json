@@ -1,199 +1,1348 @@
 {
- "date": "2026-10-27",
+ "date": "2026-10-28",
  "candidates": [],
  "observe": [
   {
    "pattern": "穿山二龍",
    "entry_type": "次日開盤進場",
-   "base": 328.5,
-   "price": 328.5,
-   "swing_high": 404.5,
-   "swing_low": 279.0,
-   "pattern_high": 404.5,
-   "pattern_low": 298.0,
-   "a_rally": 0.4498207885304659,
-   "a_amp": 0.35738255033557054,
-   "rally_date": "2026-08-13",
-   "break_date": "2026-10-13",
-   "score": 76.3,
-   "reason": "第1階段漲 45%（07-30→08-13），10-13 跌破 20MA，今日漲停站回",
-   "code": "2049",
-   "name": "上銀",
-   "date": "2026-10-27",
+   "base": 57.5,
+   "price": 57.5,
+   "swing_high": 69.4,
+   "swing_low": 33.0,
+   "pattern_high": 69.4,
+   "pattern_low": 51.3,
+   "a_rally": 1.103030303030303,
+   "a_amp": 0.3528265107212478,
+   "rally_date": "2026-10-19",
+   "break_date": "2026-10-22",
+   "score": 93.5,
+   "reason": "第1階段漲 110%（07-30→10-19），10-22 跌破 20MA，今日漲停站回",
+   "code": "3701",
+   "name": "大眾控",
+   "date": "2026-10-28",
    "market": "TSE",
    "groups": [
-    "電機機械"
+    "電腦週邊"
    ],
    "targets": {
-    "rally": 402.38306451612897,
-    "amp": 387.20008389261744
+    "rally": 89.21212121212122,
+    "amp": 67.64376218323588
    },
    "leader_of": []
   },
   {
    "pattern": "穿山二龍",
    "entry_type": "次日開盤進場",
-   "base": 1990.0,
-   "price": 1990.0,
-   "swing_high": 2565.0,
-   "swing_low": 1795.0,
-   "pattern_high": 2565.0,
-   "pattern_low": 1760.0,
-   "a_rally": 0.4289693593314763,
-   "a_amp": 0.45738636363636354,
-   "rally_date": "2026-08-20",
-   "break_date": "2026-10-06",
-   "score": 75.7,
-   "reason": "第1階段漲 43%（07-20→08-20），10-06 跌破 20MA，今日漲停站回",
-   "code": "7750",
-   "name": "新代",
-   "date": "2026-10-27",
+   "base": 40.4,
+   "price": 40.4,
+   "swing_high": 56.4,
+   "swing_low": 21.8,
+   "pattern_high": 56.4,
+   "pattern_low": 32.25,
+   "a_rally": 1.5871559633027523,
+   "a_amp": 0.7488372093023254,
+   "rally_date": "2026-08-28",
+   "break_date": "2026-10-05",
+   "score": 93.3,
+   "reason": "第1階段漲 159%（07-30→08-28），10-05 跌破 20MA，今日漲停站回",
+   "code": "2491",
+   "name": "吉祥全",
+   "date": "2026-10-28",
    "market": "TSE",
    "groups": [
-    "電機機械"
+    "光電"
    ],
    "targets": {
-    "rally": 2416.8245125348185,
-    "amp": 2445.0994318181815
+    "rally": 72.46055045871559,
+    "amp": 55.52651162790698
    },
    "leader_of": []
   },
   {
    "pattern": "穿山二龍",
-   "entry_type": "收盤進場",
-   "base": 75.5,
-   "price": 75.5,
-   "swing_high": 84.3,
-   "swing_low": 48.5,
-   "pattern_high": 84.3,
-   "pattern_low": 70.2,
-   "a_rally": 0.7381443298969073,
-   "a_amp": 0.2008547008547008,
+   "entry_type": "次日開盤進場",
+   "base": 57.9,
+   "price": 57.9,
+   "swing_high": 68.3,
+   "swing_low": 33.45,
+   "pattern_high": 68.3,
+   "pattern_low": 52.3,
+   "a_rally": 1.0418535127055302,
+   "a_amp": 0.3059273422562141,
+   "rally_date": "2026-10-15",
+   "break_date": "2026-10-22",
+   "score": 93.3,
+   "reason": "第1階段漲 104%（07-28→10-15），10-22 跌破 20MA，今日漲停站回",
+   "code": "6668",
+   "name": "中揚光",
+   "date": "2026-10-28",
+   "market": "TSE",
+   "groups": [
+    "光電"
+   ],
+   "targets": {
+    "rally": 88.06165919282509,
+    "amp": 66.7565965583174
+   },
+   "leader_of": []
+  },
+  {
+   "pattern": "穿山二龍",
+   "entry_type": "次日開盤進場",
+   "base": 1035.0,
+   "price": 1035.0,
+   "swing_high": 1150.0,
+   "swing_low": 541.0,
+   "pattern_high": 1150.0,
+   "pattern_low": 928.0,
+   "a_rally": 1.1256931608133085,
+   "a_amp": 0.23922413793103448,
+   "rally_date": "2026-10-05",
+   "break_date": "2026-10-22",
+   "score": 93.0,
+   "reason": "第1階段漲 113%（07-30→10-05），10-22 跌破 20MA，今日漲停站回",
+   "code": "3189",
+   "name": "景碩",
+   "date": "2026-10-28",
+   "market": "TSE",
+   "groups": [
+    "半導體"
+   ],
+   "targets": {
+    "rally": 1617.546210720887,
+    "amp": 1158.7984913793105
+   },
+   "leader_of": []
+  },
+  {
+   "pattern": "穿山二龍",
+   "entry_type": "次日開盤進場",
+   "base": 80.5,
+   "price": 80.5,
+   "swing_high": 91.0,
+   "swing_low": 45.0,
+   "pattern_high": 91.0,
+   "pattern_low": 70.0,
+   "a_rally": 1.0222222222222221,
+   "a_amp": 0.30000000000000004,
    "rally_date": "2026-10-01",
    "break_date": "2026-10-22",
-   "score": 75.0,
-   "reason": "第1階段漲 74%（07-30→10-01），10-22 跌破 20MA，今日紅K +3.6%站回",
-   "code": "6425",
-   "name": "易發",
-   "date": "2026-10-27",
+   "score": 93.0,
+   "reason": "第1階段漲 102%（07-30→10-01），10-22 跌破 20MA，今日漲停站回",
+   "code": "1595",
+   "name": "川寶",
+   "date": "2026-10-28",
    "market": "OTC",
    "groups": [
-    "電機機械"
+    "半導體"
    ],
    "targets": {
-    "rally": 103.36494845360825,
-    "amp": 83.08226495726497
+    "rally": 121.64444444444445,
+    "amp": 92.57499999999999
+   },
+   "leader_of": []
+  },
+  {
+   "pattern": "穿山二龍",
+   "entry_type": "次日開盤進場",
+   "base": 540.0,
+   "price": 540.0,
+   "swing_high": 630.0,
+   "swing_low": 262.0,
+   "pattern_high": 630.0,
+   "pattern_low": 454.0,
+   "a_rally": 1.4045801526717558,
+   "a_amp": 0.38766519823788537,
+   "rally_date": "2026-10-05",
+   "break_date": "2026-10-15",
+   "score": 93.0,
+   "reason": "第1階段漲 140%（07-30→10-05），10-15 跌破 20MA，今日漲停站回",
+   "code": "3105",
+   "name": "穩懋",
+   "date": "2026-10-28",
+   "market": "OTC",
+   "groups": [
+    "半導體"
+   ],
+   "targets": {
+    "rally": 919.236641221374,
+    "amp": 644.669603524229
+   },
+   "leader_of": []
+  },
+  {
+   "pattern": "穿山二龍",
+   "entry_type": "次日開盤進場",
+   "base": 62.9,
+   "price": 62.9,
+   "swing_high": 75.4,
+   "swing_low": 34.81432360742705,
+   "pattern_high": 75.4,
+   "pattern_low": 54.2,
+   "a_rally": 1.1657752380952386,
+   "a_amp": 0.3911439114391144,
+   "rally_date": "2026-10-06",
+   "break_date": "2026-10-27",
+   "score": 93.0,
+   "reason": "第1階段漲 117%（07-29→10-06），10-27 跌破 20MA，今日漲停站回",
+   "code": "6708",
+   "name": "天擎",
+   "date": "2026-10-28",
+   "market": "OTC",
+   "groups": [
+    "半導體"
+   ],
+   "targets": {
+    "rally": 99.56363123809525,
+    "amp": 75.20147601476015
+   },
+   "leader_of": []
+  },
+  {
+   "pattern": "穿山二龍",
+   "entry_type": "次日開盤進場",
+   "base": 275.5,
+   "price": 275.5,
+   "swing_high": 319.0,
+   "swing_low": 161.0,
+   "pattern_high": 319.0,
+   "pattern_low": 226.5,
+   "a_rally": 0.9813664596273293,
+   "a_amp": 0.4083885209713025,
+   "rally_date": "2026-09-10",
+   "break_date": "2026-10-05",
+   "score": 92.5,
+   "reason": "第1階段漲 98%（07-30→09-10），10-05 跌破 20MA，今日漲停站回",
+   "code": "3006",
+   "name": "晶豪科",
+   "date": "2026-10-28",
+   "market": "TSE",
+   "groups": [
+    "半導體"
+   ],
+   "targets": {
+    "rally": 410.68322981366464,
+    "amp": 331.75551876379694
+   },
+   "leader_of": []
+  },
+  {
+   "pattern": "穿山二龍",
+   "entry_type": "次日開盤進場",
+   "base": 56.3,
+   "price": 56.3,
+   "swing_high": 60.5,
+   "swing_low": 26.35,
+   "pattern_high": 60.5,
+   "pattern_low": 51.0,
+   "a_rally": 1.2960151802656545,
+   "a_amp": 0.18627450980392157,
+   "rally_date": "2026-10-20",
+   "break_date": "2026-10-27",
+   "score": 91.9,
+   "reason": "第1階段漲 130%（07-30→10-20），10-27 跌破 20MA，今日漲停站回",
+   "code": "4927",
+   "name": "泰鼎-KY",
+   "date": "2026-10-28",
+   "market": "TSE",
+   "groups": [
+    "電子零組件"
+   ],
+   "targets": {
+    "rally": 92.78282732447818,
+    "amp": 61.543627450980395
+   },
+   "leader_of": []
+  },
+  {
+   "pattern": "穿山二龍",
+   "entry_type": "次日開盤進場",
+   "base": 480.5,
+   "price": 480.5,
+   "swing_high": 565.0,
+   "swing_low": 290.0,
+   "pattern_high": 565.0,
+   "pattern_low": 437.0,
+   "a_rally": 0.9482758620689655,
+   "a_amp": 0.29290617848970246,
+   "rally_date": "2026-10-15",
+   "break_date": "2026-10-27",
+   "score": 90.3,
+   "reason": "第1階段漲 95%（07-30→10-15），10-27 跌破 20MA，今日漲停站回",
+   "code": "6715",
+   "name": "嘉基",
+   "date": "2026-10-28",
+   "market": "TSE",
+   "groups": [
+    "電子零組件"
+   ],
+   "targets": {
+    "rally": 708.323275862069,
+    "amp": 550.8707093821511
+   },
+   "leader_of": []
+  },
+  {
+   "pattern": "穿山二龍",
+   "entry_type": "次日開盤進場",
+   "base": 52.1,
+   "price": 52.1,
+   "swing_high": 59.3,
+   "swing_low": 31.8,
+   "pattern_high": 59.3,
+   "pattern_low": 46.6,
+   "a_rally": 0.8647798742138364,
+   "a_amp": 0.27253218884120156,
+   "rally_date": "2026-10-19",
+   "break_date": "2026-10-27",
+   "score": 88.6,
+   "reason": "第1階段漲 86%（07-30→10-19），10-27 跌破 20MA，今日漲停站回",
+   "code": "4903",
+   "name": "聯光通",
+   "date": "2026-10-28",
+   "market": "OTC",
+   "groups": [
+    "通信網路"
+   ],
+   "targets": {
+    "rally": 74.62751572327043,
+    "amp": 59.1994635193133
+   },
+   "leader_of": []
+  },
+  {
+   "pattern": "穿山二龍",
+   "entry_type": "次日開盤進場",
+   "base": 187.0,
+   "price": 187.0,
+   "swing_high": 195.5,
+   "swing_low": 105.0,
+   "pattern_high": 195.5,
+   "pattern_low": 165.0,
+   "a_rally": 0.861904761904762,
+   "a_amp": 0.18484848484848482,
+   "rally_date": "2026-10-15",
+   "break_date": "2026-10-22",
+   "score": 88.5,
+   "reason": "第1階段漲 86%（07-30→10-15），10-22 跌破 20MA，今日漲停站回",
+   "code": "4977",
+   "name": "眾達-KY",
+   "date": "2026-10-28",
+   "market": "TSE",
+   "groups": [
+    "通信網路"
+   ],
+   "targets": {
+    "rally": 267.58809523809526,
+    "amp": 204.2833333333333
    },
    "leader_of": []
   },
   {
    "pattern": "穿山二龍",
    "entry_type": "收盤進場",
-   "base": 61.5,
-   "price": 61.5,
-   "swing_high": 65.3,
-   "swing_low": 42.2,
-   "pattern_high": 65.3,
-   "pattern_low": 54.8,
-   "a_rally": 0.5473933649289098,
-   "a_amp": 0.19160583941605847,
-   "rally_date": "2026-08-17",
-   "break_date": "2026-10-15",
-   "score": 69.3,
-   "reason": "第1階段漲 55%（07-30→08-17），10-15 跌破 20MA，今日紅K +7.1%站回",
-   "code": "4540",
-   "name": "全球傳動",
-   "date": "2026-10-27",
+   "base": 244.5,
+   "price": 244.5,
+   "swing_high": 255.0,
+   "swing_low": 150.0,
+   "pattern_high": 255.0,
+   "pattern_low": 230.5,
+   "a_rally": 0.7,
+   "a_amp": 0.10629067245119317,
+   "rally_date": "2026-10-22",
+   "break_date": "2026-10-27",
+   "score": 88.2,
+   "reason": "第1階段漲 70%（07-29→10-22），10-27 跌破 20MA，今日紅K +4.7%站回",
+   "code": "5292",
+   "name": "華懋",
+   "date": "2026-10-28",
+   "market": "TSE",
+   "groups": [
+    "綠能環保"
+   ],
+   "targets": {
+    "rally": 330.07500000000005,
+    "amp": 257.49403470715833
+   },
+   "leader_of": [
+    "綠能環保"
+   ]
+  },
+  {
+   "pattern": "穿山二龍",
+   "entry_type": "次日開盤進場",
+   "base": 1185.0,
+   "price": 1185.0,
+   "swing_high": 1310.0,
+   "swing_low": 705.0,
+   "pattern_high": 1310.0,
+   "pattern_low": 1055.0,
+   "a_rally": 0.8581560283687943,
+   "a_amp": 0.2417061611374407,
+   "rally_date": "2026-10-07",
+   "break_date": "2026-10-22",
+   "score": 87.6,
+   "reason": "第1階段漲 86%（07-30→10-07），10-22 跌破 20MA，今日漲停站回",
+   "code": "2368",
+   "name": "金像電",
+   "date": "2026-10-28",
+   "market": "TSE",
+   "groups": [
+    "電子零組件"
+   ],
+   "targets": {
+    "rally": 1693.4574468085107,
+    "amp": 1328.2109004739336
+   },
+   "leader_of": []
+  },
+  {
+   "pattern": "穿山二龍",
+   "entry_type": "次日開盤進場",
+   "base": 58.5,
+   "price": 58.5,
+   "swing_high": 63.0,
+   "swing_low": 35.5,
+   "pattern_high": 63.0,
+   "pattern_low": 49.4,
+   "a_rally": 0.7746478873239437,
+   "a_amp": 0.2753036437246963,
+   "rally_date": "2026-10-01",
+   "break_date": "2026-10-27",
+   "score": 86.5,
+   "reason": "第1階段漲 77%（07-29→10-01），10-27 跌破 20MA，今日漲停站回",
+   "code": "8240",
+   "name": "華宏",
+   "date": "2026-10-28",
+   "market": "OTC",
+   "groups": [
+    "光電"
+   ],
+   "targets": {
+    "rally": 81.15845070422536,
+    "amp": 66.55263157894737
+   },
+   "leader_of": []
+  },
+  {
+   "pattern": "穿山二龍",
+   "entry_type": "次日開盤進場",
+   "base": 3200.0,
+   "price": 3200.0,
+   "swing_high": 3935.0,
+   "swing_low": 2235.0,
+   "pattern_high": 3935.0,
+   "pattern_low": 2825.0,
+   "a_rally": 0.7606263982102908,
+   "a_amp": 0.39292035398230096,
+   "rally_date": "2026-09-09",
+   "break_date": "2026-10-22",
+   "score": 85.9,
+   "reason": "第1階段漲 76%（07-29→09-09），10-22 跌破 20MA，今日漲停站回",
+   "code": "6510",
+   "name": "精測",
+   "date": "2026-10-28",
+   "market": "OTC",
+   "groups": [
+    "半導體"
+   ],
+   "targets": {
+    "rally": 4417.002237136465,
+    "amp": 3828.6725663716816
+   },
+   "leader_of": []
+  },
+  {
+   "pattern": "穿山二龍",
+   "entry_type": "次日開盤進場",
+   "base": 15.95,
+   "price": 15.95,
+   "swing_high": 17.8,
+   "swing_low": 10.5,
+   "pattern_high": 17.8,
+   "pattern_low": 13.9,
+   "a_rally": 0.6952380952380952,
+   "a_amp": 0.28057553956834536,
+   "rally_date": "2026-10-05",
+   "break_date": "2026-10-22",
+   "score": 83.5,
+   "reason": "第1階段漲 70%（07-29→10-05），10-22 跌破 20MA，今日漲停站回",
+   "code": "2444",
+   "name": "兆勁",
+   "date": "2026-10-28",
+   "market": "TSE",
+   "groups": [
+    "通信網路"
+   ],
+   "targets": {
+    "rally": 21.49452380952381,
+    "amp": 18.18758992805755
+   },
+   "leader_of": []
+  },
+  {
+   "pattern": "穿山二龍",
+   "entry_type": "收盤進場",
+   "base": 1030.0,
+   "price": 1030.0,
+   "swing_high": 1090.0,
+   "swing_low": 434.5,
+   "pattern_high": 1090.0,
+   "pattern_low": 884.0,
+   "a_rally": 1.5086306098964326,
+   "a_amp": 0.23303167420814486,
+   "rally_date": "2026-10-12",
+   "break_date": "2026-10-22",
+   "score": 83.0,
+   "reason": "第1階段漲 151%（07-30→10-12），10-22 跌破 20MA，今日紅K +7.3%站回",
+   "code": "3167",
+   "name": "大量",
+   "date": "2026-10-28",
    "market": "TSE",
    "groups": [
     "電機機械"
    ],
    "targets": {
-    "rally": 78.33234597156398,
-    "amp": 67.3918795620438
+    "rally": 1806.9447640966628,
+    "amp": 1150.0113122171947
    },
    "leader_of": []
   },
   {
    "pattern": "穿山二龍",
    "entry_type": "收盤進場",
-   "base": 43.4,
-   "price": 43.4,
-   "swing_high": 48.45,
-   "swing_low": 33.0,
-   "pattern_high": 48.45,
-   "pattern_low": 39.95,
-   "a_rally": 0.46818181818181825,
-   "a_amp": 0.2127659574468086,
-   "rally_date": "2026-09-04",
-   "break_date": "2026-09-22",
-   "score": 66.9,
-   "reason": "第1階段漲 47%（07-29→09-04），09-22 跌破 20MA，今日紅K +4.7%站回",
-   "code": "4510",
-   "name": "高鋒",
-   "date": "2026-10-27",
+   "base": 500.0,
+   "price": 500.0,
+   "swing_high": 530.0,
+   "swing_low": 252.0,
+   "pattern_high": 530.0,
+   "pattern_low": 399.0,
+   "a_rally": 1.1031746031746033,
+   "a_amp": 0.32832080200501257,
+   "rally_date": "2026-10-06",
+   "break_date": "2026-10-22",
+   "score": 83.0,
+   "reason": "第1階段漲 110%（07-30→10-06），10-22 跌破 20MA，今日紅K +7.9%站回",
+   "code": "3374",
+   "name": "精材",
+   "date": "2026-10-28",
    "market": "OTC",
+   "groups": [
+    "半導體"
+   ],
+   "targets": {
+    "rally": 775.7936507936508,
+    "amp": 582.0802005012531
+   },
+   "leader_of": []
+  },
+  {
+   "pattern": "穿山二龍",
+   "entry_type": "收盤進場",
+   "base": 114.0,
+   "price": 114.0,
+   "swing_high": 141.0,
+   "swing_low": 65.7,
+   "pattern_high": 141.0,
+   "pattern_low": 99.6,
+   "a_rally": 1.1461187214611872,
+   "a_amp": 0.4156626506024097,
+   "rally_date": "2026-08-18",
+   "break_date": "2026-10-13",
+   "score": 83.0,
+   "reason": "第1階段漲 115%（07-30→08-18），10-13 跌破 20MA，今日紅K +7.5%站回",
+   "code": "5351",
+   "name": "鈺創",
+   "date": "2026-10-28",
+   "market": "OTC",
+   "groups": [
+    "半導體"
+   ],
+   "targets": {
+    "rally": 179.32876712328766,
+    "amp": 137.69277108433735
+   },
+   "leader_of": []
+  },
+  {
+   "pattern": "穿山二龍",
+   "entry_type": "收盤進場",
+   "base": 222.5,
+   "price": 222.5,
+   "swing_high": 238.0,
+   "swing_low": 113.5,
+   "pattern_high": 238.0,
+   "pattern_low": 194.5,
+   "a_rally": 1.0969162995594712,
+   "a_amp": 0.2236503856041132,
+   "rally_date": "2026-10-07",
+   "break_date": "2026-10-15",
+   "score": 83.0,
+   "reason": "第1階段漲 110%（07-30→10-07），10-15 跌破 20MA，今日紅K +7.5%站回",
+   "code": "6147",
+   "name": "頎邦",
+   "date": "2026-10-28",
+   "market": "OTC",
+   "groups": [
+    "半導體"
+   ],
+   "targets": {
+    "rally": 344.5319383259912,
+    "amp": 247.3811053984576
+   },
+   "leader_of": []
+  },
+  {
+   "pattern": "穿山二龍",
+   "entry_type": "收盤進場",
+   "base": 2460.0,
+   "price": 2460.0,
+   "swing_high": 2750.0,
+   "swing_low": 1205.0,
+   "pattern_high": 2750.0,
+   "pattern_low": 2065.0,
+   "a_rally": 1.2821576763485476,
+   "a_amp": 0.33171912832929773,
+   "rally_date": "2026-09-23",
+   "break_date": "2026-10-22",
+   "score": 81.9,
+   "reason": "第1階段漲 128%（07-30→09-23），10-22 跌破 20MA，今日紅K +9.3%站回",
+   "code": "6805",
+   "name": "富世達",
+   "date": "2026-10-28",
+   "market": "TSE",
+   "groups": [
+    "電子零組件"
+   ],
+   "targets": {
+    "rally": 4037.0539419087136,
+    "amp": 2868.0145278450364
+   },
+   "leader_of": []
+  },
+  {
+   "pattern": "穿山二龍",
+   "entry_type": "收盤進場",
+   "base": 113.0,
+   "price": 113.0,
+   "swing_high": 126.5,
+   "swing_low": 65.4,
+   "pattern_high": 126.5,
+   "pattern_low": 103.0,
+   "a_rally": 0.9342507645259936,
+   "a_amp": 0.22815533980582514,
+   "rally_date": "2026-10-19",
+   "break_date": "2026-10-22",
+   "score": 80.6,
+   "reason": "第1階段漲 93%（07-30→10-19），10-22 跌破 20MA，今日紅K +5.1%站回",
+   "code": "3580",
+   "name": "友威科",
+   "date": "2026-10-28",
+   "market": "OTC",
+   "groups": [
+    "其他電子"
+   ],
+   "targets": {
+    "rally": 165.78516819571865,
+    "amp": 125.89077669902913
+   },
+   "leader_of": []
+  },
+  {
+   "pattern": "穿山二龍",
+   "entry_type": "收盤進場",
+   "base": 18.5,
+   "price": 18.5,
+   "swing_high": 21.25,
+   "swing_low": 11.0,
+   "pattern_high": 21.25,
+   "pattern_low": 16.95,
+   "a_rally": 0.9318181818181819,
+   "a_amp": 0.2536873156342183,
+   "rally_date": "2026-10-08",
+   "break_date": "2026-10-27",
+   "score": 80.6,
+   "reason": "第1階段漲 93%（07-29→10-08），10-27 跌破 20MA，今日紅K +8.2%站回",
+   "code": "6152",
+   "name": "百一",
+   "date": "2026-10-28",
+   "market": "TSE",
+   "groups": [
+    "通信網路"
+   ],
+   "targets": {
+    "rally": 27.11931818181818,
+    "amp": 20.84660766961652
+   },
+   "leader_of": []
+  },
+  {
+   "pattern": "穿山二龍",
+   "entry_type": "收盤進場",
+   "base": 64.2,
+   "price": 64.2,
+   "swing_high": 75.3,
+   "swing_low": 39.5,
+   "pattern_high": 75.3,
+   "pattern_low": 61.2,
+   "a_rally": 0.9063291139240506,
+   "a_amp": 0.23039215686274495,
+   "rally_date": "2026-10-13",
+   "break_date": "2026-10-27",
+   "score": 79.8,
+   "reason": "第1階段漲 91%（07-30→10-13），10-27 跌破 20MA，今日紅K +4.4%站回",
+   "code": "3564",
+   "name": "其陽",
+   "date": "2026-10-28",
+   "market": "OTC",
+   "groups": [
+    "通信網路"
+   ],
+   "targets": {
+    "rally": 93.29316455696203,
+    "amp": 71.59558823529412
+   },
+   "leader_of": []
+  },
+  {
+   "pattern": "穿山二龍",
+   "entry_type": "次日開盤進場",
+   "base": 42.35,
+   "price": 42.35,
+   "swing_high": 46.8,
+   "swing_low": 30.2,
+   "pattern_high": 46.8,
+   "pattern_low": 37.8,
+   "a_rally": 0.5496688741721854,
+   "a_amp": 0.23809523809523814,
+   "rally_date": "2026-10-02",
+   "break_date": "2026-10-15",
+   "score": 79.8,
+   "reason": "第1階段漲 55%（07-30→10-02），10-15 跌破 20MA，今日漲停站回",
+   "code": "3615",
+   "name": "安可",
+   "date": "2026-10-28",
+   "market": "OTC",
+   "groups": [
+    "光電"
+   ],
+   "targets": {
+    "rally": 53.98923841059602,
+    "amp": 47.391666666666666
+   },
+   "leader_of": []
+  },
+  {
+   "pattern": "穿山二龍",
+   "entry_type": "次日開盤進場",
+   "base": 210.5,
+   "price": 210.5,
+   "swing_high": 223.5,
+   "swing_low": 146.5,
+   "pattern_high": 223.5,
+   "pattern_low": 186.0,
+   "a_rally": 0.5255972696245734,
+   "a_amp": 0.2016129032258065,
+   "rally_date": "2026-10-05",
+   "break_date": "2026-10-15",
+   "score": 78.8,
+   "reason": "第1階段漲 53%（08-03→10-05），10-15 跌破 20MA，今日漲停站回",
+   "code": "3035",
+   "name": "智原",
+   "date": "2026-10-28",
+   "market": "TSE",
+   "groups": [
+    "半導體"
+   ],
+   "targets": {
+    "rally": 265.8191126279864,
+    "amp": 231.71975806451613
+   },
+   "leader_of": []
+  },
+  {
+   "pattern": "穿山二龍",
+   "entry_type": "次日開盤進場",
+   "base": 116.0,
+   "price": 116.0,
+   "swing_high": 130.5,
+   "swing_low": 86.1,
+   "pattern_high": 130.5,
+   "pattern_low": 92.8,
+   "a_rally": 0.515679442508711,
+   "a_amp": 0.40625,
+   "rally_date": "2026-08-13",
+   "break_date": "2026-10-15",
+   "score": 78.5,
+   "reason": "第1階段漲 52%（07-30→08-13），10-15 跌破 20MA，今日漲停站回",
+   "code": "3581",
+   "name": "博磊",
+   "date": "2026-10-28",
+   "market": "OTC",
+   "groups": [
+    "半導體"
+   ],
+   "targets": {
+    "rally": 145.90940766550523,
+    "amp": 139.5625
+   },
+   "leader_of": []
+  },
+  {
+   "pattern": "穿山二龍",
+   "entry_type": "收盤進場",
+   "base": 41.0,
+   "price": 41.0,
+   "swing_high": 47.95,
+   "swing_low": 27.7,
+   "pattern_high": 47.95,
+   "pattern_low": 36.7,
+   "a_rally": 0.7310469314079424,
+   "a_amp": 0.30653950953678466,
+   "rally_date": "2026-10-06",
+   "break_date": "2026-10-27",
+   "score": 73.8,
+   "reason": "第1階段漲 73%（07-29→10-06），10-27 跌破 20MA，今日紅K +6.4%站回",
+   "code": "3114",
+   "name": "好德",
+   "date": "2026-10-28",
+   "market": "OTC",
+   "groups": [
+    "電子零組件"
+   ],
+   "targets": {
+    "rally": 55.98646209386282,
+    "amp": 47.28405994550408
+   },
+   "leader_of": []
+  },
+  {
+   "pattern": "穿山二龍",
+   "entry_type": "收盤進場",
+   "base": 27.75,
+   "price": 27.75,
+   "swing_high": 29.65,
+   "swing_low": 18.0,
+   "pattern_high": 29.65,
+   "pattern_low": 25.3,
+   "a_rally": 0.6472222222222221,
+   "a_amp": 0.17193675889328053,
+   "rally_date": "2026-10-05",
+   "break_date": "2026-10-22",
+   "score": 72.7,
+   "reason": "第1階段漲 65%（07-29→10-05），10-22 跌破 20MA，今日紅K +3.9%站回",
+   "code": "3591",
+   "name": "艾笛森",
+   "date": "2026-10-28",
+   "market": "TSE",
+   "groups": [
+    "光電"
+   ],
+   "targets": {
+    "rally": 36.73020833333333,
+    "amp": 30.135622529644266
+   },
+   "leader_of": []
+  },
+  {
+   "pattern": "穿山二龍",
+   "entry_type": "收盤進場",
+   "base": 172.0,
+   "price": 172.0,
+   "swing_high": 193.0,
+   "swing_low": 117.0,
+   "pattern_high": 193.0,
+   "pattern_low": 151.0,
+   "a_rally": 0.6495726495726495,
+   "a_amp": 0.2781456953642385,
+   "rally_date": "2026-08-12",
+   "break_date": "2026-10-13",
+   "score": 72.5,
+   "reason": "第1階段漲 65%（07-30→08-12），10-13 跌破 20MA，今日紅K +5.5%站回",
+   "code": "2344",
+   "name": "華邦電",
+   "date": "2026-10-28",
+   "market": "TSE",
+   "groups": [
+    "半導體"
+   ],
+   "targets": {
+    "rally": 227.86324786324786,
+    "amp": 195.9205298013245
+   },
+   "leader_of": []
+  },
+  {
+   "pattern": "穿山二龍",
+   "entry_type": "收盤進場",
+   "base": 81.1,
+   "price": 81.1,
+   "swing_high": 87.9,
+   "swing_low": 54.0,
+   "pattern_high": 87.9,
+   "pattern_low": 76.2,
+   "a_rally": 0.627777777777778,
+   "a_amp": 0.15354330708661412,
+   "rally_date": "2026-10-06",
+   "break_date": "2026-10-27",
+   "score": 72.1,
+   "reason": "第1階段漲 63%（07-30→10-06），10-27 跌破 20MA，今日紅K +3.0%站回",
+   "code": "4949",
+   "name": "有成精密",
+   "date": "2026-10-28",
+   "market": "TSE",
+   "groups": [
+    "光電"
+   ],
+   "targets": {
+    "rally": 106.5563888888889,
+    "amp": 87.32618110236218
+   },
+   "leader_of": []
+  },
+  {
+   "pattern": "穿山二龍",
+   "entry_type": "收盤進場",
+   "base": 75.0,
+   "price": 75.0,
+   "swing_high": 81.0,
+   "swing_low": 50.1,
+   "pattern_high": 81.0,
+   "pattern_low": 68.5,
+   "a_rally": 0.6167664670658681,
+   "a_amp": 0.18248175182481763,
+   "rally_date": "2026-10-05",
+   "break_date": "2026-10-27",
+   "score": 71.8,
+   "reason": "第1階段漲 62%（07-30→10-05），10-27 跌破 20MA，今日紅K +5.9%站回",
+   "code": "3673",
+   "name": "TPK-KY",
+   "date": "2026-10-28",
+   "market": "TSE",
+   "groups": [
+    "光電"
+   ],
+   "targets": {
+    "rally": 98.12874251497004,
+    "amp": 81.84306569343066
+   },
+   "leader_of": []
+  },
+  {
+   "pattern": "穿山二龍",
+   "entry_type": "收盤進場",
+   "base": 149.0,
+   "price": 149.0,
+   "swing_high": 164.0,
+   "swing_low": 102.0,
+   "pattern_high": 164.0,
+   "pattern_low": 131.5,
+   "a_rally": 0.607843137254902,
+   "a_amp": 0.24714828897338403,
+   "rally_date": "2026-09-07",
+   "break_date": "2026-10-19",
+   "score": 71.2,
+   "reason": "第1階段漲 61%（07-30→09-07），10-19 跌破 20MA，今日紅K +3.5%站回",
+   "code": "1597",
+   "name": "直得",
+   "date": "2026-10-28",
+   "market": "TSE",
    "groups": [
     "電機機械"
    ],
    "targets": {
-    "rally": 53.55954545454546,
-    "amp": 48.01702127659574
+    "rally": 194.2843137254902,
+    "amp": 167.4125475285171
+   },
+   "leader_of": []
+  },
+  {
+   "pattern": "穿山二龍",
+   "entry_type": "收盤進場",
+   "base": 77.9,
+   "price": 77.9,
+   "swing_high": 89.5,
+   "swing_low": 55.8,
+   "pattern_high": 89.5,
+   "pattern_low": 72.3,
+   "a_rally": 0.6039426523297491,
+   "a_amp": 0.23789764868603047,
+   "rally_date": "2026-10-14",
+   "break_date": "2026-10-22",
+   "score": 71.2,
+   "reason": "第1階段漲 60%（07-29→10-14），10-22 跌破 20MA，今日紅K +7.0%站回",
+   "code": "6548",
+   "name": "長科*",
+   "date": "2026-10-28",
+   "market": "OTC",
+   "groups": [
+    "半導體"
+   ],
+   "targets": {
+    "rally": 101.42356630824375,
+    "amp": 87.1661134163209
+   },
+   "leader_of": []
+  },
+  {
+   "pattern": "穿山二龍",
+   "entry_type": "收盤進場",
+   "base": 227.5,
+   "price": 227.5,
+   "swing_high": 258.0,
+   "swing_low": 162.0,
+   "pattern_high": 258.0,
+   "pattern_low": 196.0,
+   "a_rally": 0.5925925925925926,
+   "a_amp": 0.3163265306122449,
+   "rally_date": "2026-09-07",
+   "break_date": "2026-10-13",
+   "score": 70.7,
+   "reason": "第1階段漲 59%（07-30→09-07），10-13 跌破 20MA，今日紅K +3.9%站回",
+   "code": "4576",
+   "name": "大銀微系統",
+   "date": "2026-10-28",
+   "market": "TSE",
+   "groups": [
+    "電機機械"
+   ],
+   "targets": {
+    "rally": 294.9074074074074,
+    "amp": 263.48214285714283
+   },
+   "leader_of": []
+  },
+  {
+   "pattern": "穿山二龍",
+   "entry_type": "收盤進場",
+   "base": 50.9,
+   "price": 50.9,
+   "swing_high": 57.7,
+   "swing_low": 39.2,
+   "pattern_high": 57.7,
+   "pattern_low": 46.7,
+   "a_rally": 0.471938775510204,
+   "a_amp": 0.23554603854389722,
+   "rally_date": "2026-08-14",
+   "break_date": "2026-10-12",
+   "score": 68.2,
+   "reason": "第1階段漲 47%（07-30→08-14），10-12 跌破 20MA，今日紅K +3.9%站回",
+   "code": "3312",
+   "name": "弘憶股",
+   "date": "2026-10-28",
+   "market": "TSE",
+   "groups": [
+    "電子通路"
+   ],
+   "targets": {
+    "rally": 62.9108418367347,
+    "amp": 56.89464668094218
+   },
+   "leader_of": []
+  },
+  {
+   "pattern": "穿山二龍",
+   "entry_type": "收盤進場",
+   "base": 223.5,
+   "price": 223.5,
+   "swing_high": 268.0,
+   "swing_low": 174.5,
+   "pattern_high": 268.0,
+   "pattern_low": 211.0,
+   "a_rally": 0.5358166189111748,
+   "a_amp": 0.27014218009478674,
+   "rally_date": "2026-10-16",
+   "break_date": "2026-10-27",
+   "score": 67.9,
+   "reason": "第1階段漲 54%（07-30→10-16），10-27 跌破 20MA，今日紅K +4.2%站回",
+   "code": "3485",
+   "name": "敘豐",
+   "date": "2026-10-28",
+   "market": "OTC",
+   "groups": [
+    "電子零組件"
+   ],
+   "targets": {
+    "rally": 283.3775071633238,
+    "amp": 253.68838862559244
+   },
+   "leader_of": []
+  },
+  {
+   "pattern": "穿山二龍",
+   "entry_type": "收盤進場",
+   "base": 29.5,
+   "price": 29.5,
+   "swing_high": 31.0,
+   "swing_low": 21.0,
+   "pattern_high": 31.0,
+   "pattern_low": 27.0,
+   "a_rally": 0.4761904761904763,
+   "a_amp": 0.14814814814814814,
+   "rally_date": "2026-09-22",
+   "break_date": "2026-10-27",
+   "score": 67.5,
+   "reason": "第1階段漲 48%（07-29→09-22），10-27 跌破 20MA，今日紅K +6.7%站回",
+   "code": "8215",
+   "name": "明基材",
+   "date": "2026-10-28",
+   "market": "TSE",
+   "groups": [
+    "光電"
+   ],
+   "targets": {
+    "rally": 36.523809523809526,
+    "amp": 31.685185185185183
+   },
+   "leader_of": []
+  },
+  {
+   "pattern": "穿山二龍",
+   "entry_type": "收盤進場",
+   "base": 133.5,
+   "price": 133.5,
+   "swing_high": 169.0,
+   "swing_low": 111.5,
+   "pattern_high": 169.0,
+   "pattern_low": 122.5,
+   "a_rally": 0.5156950672645739,
+   "a_amp": 0.379591836734694,
+   "rally_date": "2026-08-31",
+   "break_date": "2026-10-22",
+   "score": 67.3,
+   "reason": "第1階段漲 52%（07-29→08-31），10-22 跌破 20MA，今日紅K +3.5%站回",
+   "code": "6913",
+   "name": "鴻呈",
+   "date": "2026-10-28",
+   "market": "OTC",
+   "groups": [
+    "電子零組件"
+   ],
+   "targets": {
+    "rally": 167.9226457399103,
+    "amp": 158.83775510204083
+   },
+   "leader_of": []
+  },
+  {
+   "pattern": "穿山二龍",
+   "entry_type": "收盤進場",
+   "base": 28.75,
+   "price": 28.75,
+   "swing_high": 32.8,
+   "swing_low": 22.4,
+   "pattern_high": 32.8,
+   "pattern_low": 26.85,
+   "a_rally": 0.4642857142857142,
+   "a_amp": 0.22160148975791416,
+   "rally_date": "2026-10-06",
+   "break_date": "2026-10-19",
+   "score": 66.5,
+   "reason": "第1階段漲 46%（07-29→10-06），10-19 跌破 20MA，今日紅K +6.1%站回",
+   "code": "5452",
+   "name": "佶優",
+   "date": "2026-10-28",
+   "market": "OTC",
+   "groups": [
+    "其他電子"
+   ],
+   "targets": {
+    "rally": 35.424107142857146,
+    "amp": 31.935521415270014
+   },
+   "leader_of": []
+  },
+  {
+   "pattern": "穿山二龍",
+   "entry_type": "收盤進場",
+   "base": 140.5,
+   "price": 140.5,
+   "swing_high": 168.5,
+   "swing_low": 116.5,
+   "pattern_high": 168.5,
+   "pattern_low": 131.0,
+   "a_rally": 0.446351931330472,
+   "a_amp": 0.2862595419847329,
+   "rally_date": "2026-08-14",
+   "break_date": "2026-10-19",
+   "score": 66.4,
+   "reason": "第1階段漲 45%（07-29→08-14），10-19 跌破 20MA，今日紅K +6.0%站回",
+   "code": "4973",
+   "name": "廣穎",
+   "date": "2026-10-28",
+   "market": "OTC",
+   "groups": [
+    "半導體"
+   ],
+   "targets": {
+    "rally": 171.85622317596568,
+    "amp": 160.60973282442748
+   },
+   "leader_of": []
+  },
+  {
+   "pattern": "穿山二龍",
+   "entry_type": "收盤進場",
+   "base": 82.2,
+   "price": 82.2,
+   "swing_high": 91.5,
+   "swing_low": 62.0,
+   "pattern_high": 91.5,
+   "pattern_low": 76.6,
+   "a_rally": 0.47580645161290325,
+   "a_amp": 0.1945169712793735,
+   "rally_date": "2026-10-20",
+   "break_date": "2026-10-27",
+   "score": 66.1,
+   "reason": "第1階段漲 48%（07-30→10-20），10-27 跌破 20MA，今日紅K +6.3%站回",
+   "code": "5469",
+   "name": "瀚宇博",
+   "date": "2026-10-28",
+   "market": "TSE",
+   "groups": [
+    "電子零組件"
+   ],
+   "targets": {
+    "rally": 101.75564516129032,
+    "amp": 90.19464751958225
+   },
+   "leader_of": []
+  },
+  {
+   "pattern": "穿山二龍",
+   "entry_type": "收盤進場",
+   "base": 38.05,
+   "price": 38.05,
+   "swing_high": 44.1,
+   "swing_low": 30.95,
+   "pattern_high": 44.1,
+   "pattern_low": 36.7,
+   "a_rally": 0.4248788368336027,
+   "a_amp": 0.20163487738419605,
+   "rally_date": "2026-10-13",
+   "break_date": "2026-10-22",
+   "score": 66.0,
+   "reason": "第1階段漲 42%（07-27→10-13），10-22 跌破 20MA，今日紅K +3.3%站回",
+   "code": "4976",
+   "name": "佳凌",
+   "date": "2026-10-28",
+   "market": "TSE",
+   "groups": [
+    "光電"
+   ],
+   "targets": {
+    "rally": 46.133319870759294,
+    "amp": 41.88610354223432
+   },
+   "leader_of": []
+  },
+  {
+   "pattern": "穿山二龍",
+   "entry_type": "收盤進場",
+   "base": 110.0,
+   "price": 110.0,
+   "swing_high": 121.0,
+   "swing_low": 89.9,
+   "pattern_high": 121.0,
+   "pattern_low": 102.5,
+   "a_rally": 0.3459399332591768,
+   "a_amp": 0.18048780487804872,
+   "rally_date": "2026-10-20",
+   "break_date": "2026-10-22",
+   "score": 62.9,
+   "reason": "第1階段漲 35%（07-30→10-20），10-22 跌破 20MA，今日紅K +6.3%站回",
+   "code": "3305",
+   "name": "昇貿",
+   "date": "2026-10-28",
+   "market": "TSE",
+   "groups": [
+    "其他電子"
+   ],
+   "targets": {
+    "rally": 129.02669632925475,
+    "amp": 119.92682926829269
+   },
+   "leader_of": []
+  },
+  {
+   "pattern": "穿山二龍",
+   "entry_type": "收盤進場",
+   "base": 67.1,
+   "price": 67.1,
+   "swing_high": 78.2,
+   "swing_low": 59.8,
+   "pattern_high": 78.2,
+   "pattern_low": 63.9,
+   "a_rally": 0.3076923076923077,
+   "a_amp": 0.2237871674491394,
+   "rally_date": "2026-10-14",
+   "break_date": "2026-10-27",
+   "score": 62.7,
+   "reason": "第1階段漲 31%（08-25→10-14），10-27 跌破 20MA，今日紅K +3.9%站回",
+   "code": "6117",
+   "name": "迎廣",
+   "date": "2026-10-28",
+   "market": "TSE",
+   "groups": [
+    "電腦週邊"
+   ],
+   "targets": {
+    "rally": 77.4230769230769,
+    "amp": 74.60805946791862
    },
    "leader_of": []
   }
  ],
  "held_back": {
-  "market": 6,
-  "group": 4,
+  "market": 4,
+  "group": 5,
   "top_n": 0
  },
  "market_ok": false,
  "rotations": [
-  "建材營造：工信 連 3 天未創高，領頭羊換成 國產（2504）",
-  "其他：裕慶-KY 連 3 天未創高，領頭羊換成 新鼎（5209）"
+  "電子零組件：瀚宇博 連 3 天未創高，領頭羊換成 廣宇（2328）"
  ],
  "watch": {},
  "strong_groups": {
   "建材營造": {
    "n": 19,
-   "strong_n": 12,
+   "strong_n": 9,
    "strong": true,
    "leader": "2504"
   },
   "汽車": {
    "n": 15,
-   "strong_n": 8,
+   "strong_n": 7,
    "strong": true,
    "leader": "3717"
   },
   "其他": {
    "n": 24,
-   "strong_n": 15,
+   "strong_n": 14,
    "strong": true,
    "leader": "5209"
   },
   "紡織": {
    "n": 7,
-   "strong_n": 5,
+   "strong_n": 4,
    "strong": true,
    "leader": "1409"
   },
-  "運動休閒": {
-   "n": 10,
-   "strong_n": 5,
+  "電子零組件": {
+   "n": 136,
+   "strong_n": 51,
    "strong": true,
-   "leader": "9904"
+   "leader": "2328"
   },
   "電機機械": {
-   "n": 30,
-   "strong_n": 17,
+   "n": 32,
+   "strong_n": 19,
    "strong": true,
    "leader": "4566"
   },
   "生技醫療": {
    "n": 33,
-   "strong_n": 15,
+   "strong_n": 10,
    "strong": true,
    "leader": "6782"
   },
@@ -205,64 +1354,70 @@
   },
   "綠能環保": {
    "n": 16,
-   "strong_n": 6,
+   "strong_n": 7,
    "strong": true,
    "leader": "5292"
   },
   "航運": {
    "n": 23,
-   "strong_n": 17,
+   "strong_n": 10,
    "strong": true,
    "leader": "2603"
   },
   "電腦週邊": {
    "n": 60,
-   "strong_n": 32,
+   "strong_n": 42,
    "strong": true,
    "leader": "3005"
   },
+  "半導體": {
+   "n": 156,
+   "strong_n": 95,
+   "strong": true,
+   "leader": "2379"
+  },
+  "其他電子": {
+   "n": 47,
+   "strong_n": 24,
+   "strong": true,
+   "leader": "4577"
+  },
   "通信網路": {
    "n": 51,
-   "strong_n": 20,
+   "strong_n": 27,
    "strong": true,
    "leader": "2412"
   },
   "光電": {
    "n": 72,
-   "strong_n": 32,
+   "strong_n": 47,
    "strong": true,
    "leader": "2466"
   },
   "電子通路": {
-   "n": 17,
-   "strong_n": 7,
+   "n": 16,
+   "strong_n": 13,
    "strong": true,
    "leader": "2347"
   },
   "資訊服務": {
    "n": 13,
-   "strong_n": 11,
+   "strong_n": 12,
    "strong": true,
    "leader": "2468"
   },
-  "觀光餐旅": {
-   "n": 5,
-   "strong_n": 5,
-   "strong": true,
-   "leader": "2723"
-  },
   "金融保險": {
    "n": 30,
-   "strong_n": 25,
+   "strong_n": 21,
    "strong": true,
    "leader": "2801"
   },
   "數位雲端": {
    "n": 12,
-   "strong_n": 9,
+   "strong_n": 10,
    "strong": true,
    "leader": "6925"
   }
  },
- "n_universe": 875
+ "n_universe": 872
 }
