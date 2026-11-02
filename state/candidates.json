@@ -1,59 +1,200 @@
 {
- "date": "2026-10-30",
+ "date": "2026-11-02",
  "candidates": [],
  "observe": [
   {
    "pattern": "穿山二龍",
-   "entry_type": "收盤進場",
-   "base": 120.0,
-   "price": 120.0,
-   "swing_high": 134.5,
-   "swing_low": 83.8,
-   "pattern_high": 134.5,
-   "pattern_low": 106.5,
-   "a_rally": 0.6050119331742243,
-   "a_amp": 0.26291079812206575,
-   "rally_date": "2026-08-25",
-   "break_date": "2026-10-29",
-   "score": 72.5,
-   "reason": "第1階段漲 61%（08-07→08-25），10-29 跌破 20MA，今日紅K +4.3%站回",
-   "code": "2615",
-   "name": "萬海",
-   "date": "2026-10-30",
-   "market": "TSE",
+   "entry_type": "次日開盤進場",
+   "base": 68.3,
+   "price": 68.3,
+   "swing_high": 75.4,
+   "swing_low": 34.81432360742705,
+   "pattern_high": 75.4,
+   "pattern_low": 54.2,
+   "a_rally": 1.1657752380952386,
+   "a_amp": 0.3911439114391144,
+   "rally_date": "2026-10-06",
+   "break_date": "2026-10-30",
+   "score": 91.6,
+   "reason": "第1階段漲 117%（07-29→10-06），10-30 跌破 20MA，今日漲停站回",
+   "code": "6708",
+   "name": "天擎",
+   "date": "2026-11-02",
+   "market": "OTC",
    "groups": [
-    "航運"
+    "半導體"
    ],
    "targets": {
-    "rally": 156.30071599045345,
-    "amp": 135.77464788732397
+    "rally": 108.1112243809524,
+    "amp": 81.65756457564575
+   },
+   "leader_of": []
+  },
+  {
+   "pattern": "穿山二龍",
+   "entry_type": "次日開盤進場",
+   "base": 82.2,
+   "price": 82.2,
+   "swing_high": 84.3,
+   "swing_low": 50.0,
+   "pattern_high": 84.3,
+   "pattern_low": 70.2,
+   "a_rally": 0.6859999999999999,
+   "a_amp": 0.2008547008547008,
+   "rally_date": "2026-10-01",
+   "break_date": "2026-10-30",
+   "score": 84.1,
+   "reason": "第1階段漲 69%（07-31→10-01），10-30 跌破 20MA，今日漲停站回",
+   "code": "6425",
+   "name": "易發",
+   "date": "2026-11-02",
+   "market": "OTC",
+   "groups": [
+    "電機機械"
+   ],
+   "targets": {
+    "rally": 110.3946,
+    "amp": 90.45512820512822
+   },
+   "leader_of": []
+  },
+  {
+   "pattern": "穿山二龍",
+   "entry_type": "收盤進場",
+   "base": 40.95,
+   "price": 40.95,
+   "swing_high": 46.45,
+   "swing_low": 25.2,
+   "pattern_high": 46.45,
+   "pattern_low": 37.85,
+   "a_rally": 0.8432539682539684,
+   "a_amp": 0.22721268163804487,
+   "rally_date": "2026-10-27",
+   "break_date": "2026-10-29",
+   "score": 80.0,
+   "reason": "第1階段漲 84%（07-30→10-27），10-29 跌破 20MA，今日紅K +6.4%站回",
+   "code": "6148",
+   "name": "驊宏資",
+   "date": "2026-11-02",
+   "market": "OTC",
+   "groups": [
+    "資訊服務"
+   ],
+   "targets": {
+    "rally": 58.215625,
+    "amp": 45.60217965653897
+   },
+   "leader_of": []
+  },
+  {
+   "pattern": "穿山二龍",
+   "entry_type": "收盤進場",
+   "base": 33.0,
+   "price": 33.0,
+   "swing_high": 35.0,
+   "swing_low": 20.35,
+   "pattern_high": 35.0,
+   "pattern_low": 29.35,
+   "a_rally": 0.7199017199017197,
+   "a_amp": 0.19250425894378198,
+   "rally_date": "2026-10-08",
+   "break_date": "2026-10-30",
+   "score": 73.3,
+   "reason": "第1階段漲 72%（07-31→10-08），10-30 跌破 20MA，今日紅K +6.1%站回",
+   "code": "3031",
+   "name": "佰鴻",
+   "date": "2026-11-02",
+   "market": "TSE",
+   "groups": [
+    "光電"
+   ],
+   "targets": {
+    "rally": 44.87837837837837,
+    "amp": 36.176320272572404
+   },
+   "leader_of": []
+  },
+  {
+   "pattern": "穿山二龍",
+   "entry_type": "收盤進場",
+   "base": 14.85,
+   "price": 14.85,
+   "swing_high": 15.9,
+   "swing_low": 11.3,
+   "pattern_high": 15.9,
+   "pattern_low": 13.55,
+   "a_rally": 0.4070796460176991,
+   "a_amp": 0.17343173431734304,
+   "rally_date": "2026-09-21",
+   "break_date": "2026-10-29",
+   "score": 66.9,
+   "reason": "第1階段漲 41%（07-30→09-21），10-29 跌破 20MA，今日紅K +4.6%站回",
+   "code": "5202",
+   "name": "力新",
+   "date": "2026-11-02",
+   "market": "OTC",
+   "groups": [
+    "資訊服務"
+   ],
+   "targets": {
+    "rally": 17.872566371681415,
+    "amp": 16.13773062730627
+   },
+   "leader_of": []
+  },
+  {
+   "pattern": "穿山二龍",
+   "entry_type": "收盤進場",
+   "base": 29.8,
+   "price": 29.8,
+   "swing_high": 31.6,
+   "swing_low": 23.3,
+   "pattern_high": 31.6,
+   "pattern_low": 27.5,
+   "a_rally": 0.35622317596566533,
+   "a_amp": 0.14909090909090916,
+   "rally_date": "2026-10-01",
+   "break_date": "2026-10-15",
+   "score": 64.2,
+   "reason": "第1階段漲 36%（07-30→10-01），10-15 跌破 20MA，今日紅K +6.6%站回",
+   "code": "2371",
+   "name": "大同",
+   "date": "2026-11-02",
+   "market": "TSE",
+   "groups": [
+    "電機機械"
+   ],
+   "targets": {
+    "rally": 35.10772532188841,
+    "amp": 32.02145454545455
    },
    "leader_of": []
   }
  ],
  "held_back": {
-  "market": 0,
-  "group": 1,
+  "market": 4,
+  "group": 0,
   "top_n": 0
  },
  "market_ok": false,
  "rotations": [
-  "建材營造：國產 連 3 天未創高，領頭羊換成 潤弘（2597）",
-  "其他：新鼎 連 3 天未創高，領頭羊換成 天品（6199）",
-  "電機機械：時碩工業 連 3 天未創高，領頭羊換成 東台（4526）",
-  "鋼鐵：東和鋼鐵 連 3 天未創高，領頭羊換成 春源（2010）"
+  "食品：統一 連 3 天未創高，領頭羊換成 味全（1201）",
+  "汽車：聯嘉投控 連 3 天未創高，領頭羊換成 巨鎧精密-創（2254）",
+  "化學：和益 連 3 天未創高，領頭羊換成 永捷（4714）",
+  "鋼鐵：春源 連 3 天未創高，領頭羊換成 佳大（2033）",
+  "電腦週邊：神基 連 3 天未創高，領頭羊換成 佳世達（2352）"
  ],
  "watch": {},
  "strong_groups": {
   "食品": {
-   "n": 6,
-   "strong_n": 6,
+   "n": 8,
+   "strong_n": 7,
    "strong": true,
-   "leader": "1216"
+   "leader": "1201"
   },
   "建材營造": {
    "n": 20,
-   "strong_n": 17,
+   "strong_n": 15,
    "strong": true,
    "leader": "2597"
   },
@@ -61,11 +202,11 @@
    "n": 15,
    "strong_n": 7,
    "strong": true,
-   "leader": "3717"
+   "leader": "2254"
   },
   "其他": {
    "n": 24,
-   "strong_n": 15,
+   "strong_n": 12,
    "strong": true,
    "leader": "6199"
   },
@@ -77,27 +218,39 @@
   },
   "運動休閒": {
    "n": 10,
-   "strong_n": 7,
+   "strong_n": 9,
    "strong": true,
    "leader": "9904"
   },
   "電機機械": {
    "n": 33,
-   "strong_n": 19,
+   "strong_n": 23,
    "strong": true,
    "leader": "4526"
   },
+  "電器電纜": {
+   "n": 7,
+   "strong_n": 4,
+   "strong": true,
+   "leader": "1605"
+  },
   "生技醫療": {
    "n": 33,
-   "strong_n": 16,
+   "strong_n": 15,
    "strong": true,
    "leader": "6782"
   },
-  "鋼鐵": {
-   "n": 19,
-   "strong_n": 12,
+  "化學": {
+   "n": 29,
+   "strong_n": 13,
    "strong": true,
-   "leader": "2010"
+   "leader": "4714"
+  },
+  "鋼鐵": {
+   "n": 18,
+   "strong_n": 11,
+   "strong": true,
+   "leader": "2033"
   },
   "綠能環保": {
    "n": 16,
@@ -106,26 +259,44 @@
    "leader": "5292"
   },
   "航運": {
-   "n": 22,
-   "strong_n": 19,
+   "n": 21,
+   "strong_n": 20,
    "strong": true,
    "leader": "2603"
   },
   "電腦週邊": {
    "n": 60,
+   "strong_n": 29,
+   "strong": true,
+   "leader": "2352"
+  },
+  "半導體": {
+   "n": 153,
+   "strong_n": 49,
+   "strong": true,
+   "leader": "3035"
+  },
+  "其他電子": {
+   "n": 47,
+   "strong_n": 16,
+   "strong": true,
+   "leader": "4577"
+  },
+  "光電": {
+   "n": 70,
    "strong_n": 24,
    "strong": true,
-   "leader": "3005"
+   "leader": "2466"
   },
   "電子通路": {
    "n": 16,
-   "strong_n": 9,
+   "strong_n": 6,
    "strong": true,
    "leader": "2347"
   },
   "資訊服務": {
    "n": 15,
-   "strong_n": 12,
+   "strong_n": 14,
    "strong": true,
    "leader": "2468"
   },
@@ -141,12 +312,18 @@
    "strong": true,
    "leader": "2801"
   },
+  "貿易百貨": {
+   "n": 4,
+   "strong_n": 4,
+   "strong": true,
+   "leader": "2903"
+  },
   "數位雲端": {
-   "n": 12,
+   "n": 11,
    "strong_n": 9,
    "strong": true,
    "leader": "6925"
   }
  },
- "n_universe": 872
+ "n_universe": 869
 }
