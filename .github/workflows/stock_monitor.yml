@@ -50,7 +50,7 @@ jobs:
 
       - name: 執行大單偵測
         env:
-          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TG_TOKEN_RADAR || secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID:   ${{ secrets.TELEGRAM_CHAT_ID }}
           TYPESAFE_API_KEY:   ${{ secrets.TYPESAFE_API_KEY }}
           JEV_DAILY_LIMIT:    '150'

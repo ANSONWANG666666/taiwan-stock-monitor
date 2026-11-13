@@ -71,7 +71,7 @@ jobs:
 
       - name: 執行全市場掃描
         env:
-          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TG_TOKEN_PICO || secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID:   ${{ secrets.TELEGRAM_CHAT_ID }}
           TYPESAFE_API_KEY:   ${{ secrets.TYPESAFE_API_KEY }}
           JEV_DAILY_LIMIT:    '100'
@@ -97,7 +97,7 @@ jobs:
         if: always()
         continue-on-error: true
         env:
-          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TG_TOKEN_PICO || secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID:   ${{ secrets.TELEGRAM_CHAT_ID }}
           DATA_DIR: data-store
           AUTO_COMMIT: '1'
@@ -116,7 +116,7 @@ jobs:
         if: always()
         continue-on-error: true
         env:
-          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TG_TOKEN_SENTRY || secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID:   ${{ secrets.TELEGRAM_CHAT_ID }}
           DATA_DIR: data-store
           AUTO_COMMIT: '1'
@@ -133,7 +133,7 @@ jobs:
         if: always()
         continue-on-error: true
         env:
-          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TG_TOKEN_SENTRY || secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID:   ${{ secrets.TELEGRAM_CHAT_ID }}
           TYPESAFE_API_KEY:   ${{ secrets.TYPESAFE_API_KEY }}
           FINMIND_TOKEN:      ${{ secrets.FINMIND_TOKEN }}
