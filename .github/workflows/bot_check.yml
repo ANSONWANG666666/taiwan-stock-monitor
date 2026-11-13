@@ -1,0 +1,27 @@
+# 報到測試：只用指定成員自己的 bot 金鑰送一則訊息（不退回其他 bot），確認這個 repo 有沒有貼好金鑰
+name: 團隊報到測試
+
+on:
+  workflow_dispatch:
+    inputs:
+      role:
+        description: '要測試的成員'
+        type: choice
+        options: [JARVIS, SUNNY, WIKI, TOMI, SCOUT, PICO, JEV, DAWN, RADAR, SENTRY, ABBY]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: 送出報到訊息
+        env:
+          TOKEN: ${{ secrets[format('TG_TOKEN_{0}', inputs.role)] }}
+          CHAT: ${{ secrets.TELEGRAM_CHAT_ID }}
+          ROLE: ${{ inputs.role }}
+          REPO: ${{ github.event.repository.name }}
+        run: |
+          if [ -z "$TOKEN" ]; then echo "::error::這個 repo（$REPO）沒有 TG_TOKEN_$ROLE"; exit 1; fi
+          TEXT="✅ 報到測試：TG_TOKEN_$ROLE 在 $REPO 設定成功"
+          curl -sS -X POST "https://api.telegram.org/bot$TOKEN/sendMessage" --data-urlencode "chat_id=$CHAT" --data-urlencode "text=$TEXT" > r.json
+          if grep -q '"ok":true' r.json; then echo "成功"; else echo "::error::Telegram 回覆：$(grep -o '"description":"[^"]*"' r.json)"; exit 1; fi
