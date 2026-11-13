@@ -80,7 +80,7 @@ jobs:
 
       - name: 盤中監控（持續到收盤後）
         env:
-          TELEGRAM_BOT_TOKEN: ${{ secrets.TG_TOKEN_SENTRY || secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TG_TOKEN_SENTRY || secrets.TG_TOKEN_WIKI || secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID:   ${{ secrets.TELEGRAM_CHAT_ID }}
           TYPESAFE_API_KEY:   ${{ secrets.TYPESAFE_API_KEY }}
           JEV_DAILY_LIMIT:    '200'          # 大單監控＋盤中選股合計
