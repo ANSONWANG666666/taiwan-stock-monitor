@@ -62,7 +62,7 @@ jobs:
 
       - name: 產生並推播週報
         env:
-          TELEGRAM_BOT_TOKEN: ${{ secrets.TG_TOKEN_TOMI || secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TG_TOKEN_SUNNY || secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID:   ${{ secrets.TELEGRAM_CHAT_ID }}
           JOURNAL_DIR:        journal-data
           FORCE_REPORT:       ${{ github.event.inputs.force }}
