@@ -1,145 +1,198 @@
 {
- "date": "2026-11-16",
+ "date": "2026-11-17",
  "candidates": [],
  "observe": [
   {
    "pattern": "穿山二龍",
-   "entry_type": "次日開盤進場",
-   "base": 87.4,
-   "price": 87.4,
-   "swing_high": 72.8,
-   "swing_low": 44.55,
-   "pattern_high": 72.8,
-   "pattern_low": 54.3,
-   "a_rally": 0.6341189674523009,
-   "a_amp": 0.3406998158379373,
-   "rally_date": "2026-10-05",
-   "break_date": "2026-10-12",
-   "score": 80.9,
-   "reason": "第1階段漲 63%（07-29→10-05），10-12 跌破 20MA，今日漲停站回",
-   "code": "3714",
-   "name": "富采",
-   "date": "2026-11-16",
-   "market": "TSE",
+   "entry_type": "收盤進場",
+   "base": 123.0,
+   "price": 123.0,
+   "swing_high": 149.0,
+   "swing_low": 93.0,
+   "pattern_high": 149.0,
+   "pattern_low": 104.5,
+   "a_rally": 0.6021505376344085,
+   "a_amp": 0.42583732057416257,
+   "rally_date": "2026-09-30",
+   "break_date": "2026-11-04",
+   "score": 71.9,
+   "reason": "第1階段漲 60%（08-05→09-30），11-04 跌破 20MA，今日紅K +7.4%站回",
+   "code": "6945",
+   "name": "圓祥生技",
+   "date": "2026-11-17",
+   "market": "OTC",
    "groups": [
-    "光電"
+    "生技醫療"
    ],
    "targets": {
-    "rally": 115.11099887766555,
-    "amp": 102.28858195211788
+    "rally": 160.03225806451613,
+    "amp": 149.188995215311
+   },
+   "leader_of": []
+  },
+  {
+   "pattern": "穿山二龍",
+   "entry_type": "收盤進場",
+   "base": 112.5,
+   "price": 112.5,
+   "swing_high": 129.0,
+   "swing_low": 85.5,
+   "pattern_high": 129.0,
+   "pattern_low": 93.5,
+   "a_rally": 0.5087719298245614,
+   "a_amp": 0.3796791443850267,
+   "rally_date": "2026-10-13",
+   "break_date": "2026-10-29",
+   "score": 67.7,
+   "reason": "第1階段漲 51%（07-31→10-13），10-29 跌破 20MA，今日紅K +5.6%站回",
+   "code": "6416",
+   "name": "瑞祺電通",
+   "date": "2026-11-17",
+   "market": "TSE",
+   "groups": [
+    "通信網路"
+   ],
+   "targets": {
+    "rally": 141.1184210526316,
+    "amp": 133.85695187165777
    },
    "leader_of": []
   }
  ],
  "held_back": {
-  "market": 1,
-  "group": 2,
+  "market": 0,
+  "group": 0,
   "top_n": 0
  },
  "market_ok": false,
  "rotations": [
-  "生技醫療：視陽 連 3 天未創高，領頭羊換成 科妍（1786）"
+  "食品：味全 連 3 天未創高，領頭羊換成 大統益（1232）",
+  "汽車：巨鎧精密-創 連 3 天未創高，領頭羊換成 和泰車（2207）"
  ],
  "watch": {},
  "strong_groups": {
   "食品": {
    "n": 8,
-   "strong_n": 6,
+   "strong_n": 7,
    "strong": true,
-   "leader": "1201"
+   "leader": "1232"
+  },
+  "塑膠": {
+   "n": 9,
+   "strong_n": 7,
+   "strong": true,
+   "leader": "1301"
   },
   "建材營造": {
    "n": 20,
-   "strong_n": 15,
+   "strong_n": 18,
    "strong": true,
    "leader": "3703"
   },
+  "汽車": {
+   "n": 14,
+   "strong_n": 9,
+   "strong": true,
+   "leader": "2207"
+  },
   "其他": {
    "n": 25,
-   "strong_n": 15,
+   "strong_n": 19,
    "strong": true,
    "leader": "1416"
   },
   "紡織": {
    "n": 7,
-   "strong_n": 5,
+   "strong_n": 7,
    "strong": true,
    "leader": "1476"
   },
   "運動休閒": {
    "n": 12,
-   "strong_n": 6,
+   "strong_n": 10,
    "strong": true,
    "leader": "9904"
   },
-  "電子零組件": {
-   "n": 122,
-   "strong_n": 38,
-   "strong": true,
-   "leader": "2355"
-  },
   "電機機械": {
    "n": 36,
-   "strong_n": 17,
+   "strong_n": 18,
    "strong": true,
    "leader": "4526"
   },
   "生技醫療": {
-   "n": 35,
-   "strong_n": 19,
+   "n": 34,
+   "strong_n": 26,
    "strong": true,
    "leader": "1786"
   },
   "化學": {
    "n": 28,
-   "strong_n": 9,
+   "strong_n": 14,
    "strong": true,
    "leader": "4741"
   },
   "鋼鐵": {
    "n": 18,
-   "strong_n": 8,
+   "strong_n": 14,
    "strong": true,
    "leader": "2033"
   },
+  "綠能環保": {
+   "n": 16,
+   "strong_n": 7,
+   "strong": true,
+   "leader": "8341"
+  },
+  "橡膠": {
+   "n": 4,
+   "strong_n": 4,
+   "strong": true,
+   "leader": "2105"
+  },
   "航運": {
    "n": 21,
-   "strong_n": 15,
+   "strong_n": 18,
    "strong": true,
    "leader": "2603"
   },
+  "電腦週邊": {
+   "n": 60,
+   "strong_n": 22,
+   "strong": true,
+   "leader": "2465"
+  },
   "半導體": {
-   "n": 148,
-   "strong_n": 53,
+   "n": 146,
+   "strong_n": 49,
    "strong": true,
    "leader": "6233"
   },
   "其他電子": {
-   "n": 44,
+   "n": 45,
    "strong_n": 15,
    "strong": true,
    "leader": "4577"
   },
   "通信網路": {
    "n": 47,
-   "strong_n": 22,
+   "strong_n": 23,
    "strong": true,
    "leader": "8089"
   },
   "光電": {
    "n": 64,
-   "strong_n": 24,
+   "strong_n": 23,
    "strong": true,
    "leader": "2466"
   },
   "電子通路": {
    "n": 17,
-   "strong_n": 6,
+   "strong_n": 8,
    "strong": true,
    "leader": "2347"
   },
   "資訊服務": {
-   "n": 22,
+   "n": 23,
    "strong_n": 20,
    "strong": true,
    "leader": "2468"
@@ -152,16 +205,16 @@
   },
   "金融保險": {
    "n": 29,
-   "strong_n": 23,
+   "strong_n": 28,
    "strong": true,
    "leader": "2880"
   },
   "數位雲端": {
-   "n": 11,
-   "strong_n": 7,
+   "n": 12,
+   "strong_n": 9,
    "strong": true,
    "leader": "6870"
   }
  },
- "n_universe": 853
+ "n_universe": 851
 }
