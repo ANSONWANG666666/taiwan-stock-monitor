@@ -1,45 +1,44 @@
 {
- "date": "2026-11-19",
+ "date": "2026-11-20",
  "candidates": [],
  "observe": [
   {
    "pattern": "穿山二龍",
-   "entry_type": "收盤進場",
-   "base": 290.5,
-   "price": 290.5,
-   "swing_high": 296.0,
-   "swing_low": 196.5,
-   "pattern_high": 296.0,
-   "pattern_low": 255.0,
-   "a_rally": 0.5063613231552162,
-   "a_amp": 0.1607843137254903,
-   "rally_date": "2026-11-11",
-   "break_date": "2026-11-17",
-   "score": 68.6,
-   "reason": "第1階段漲 51%（08-19→11-11），11-17 跌破 20MA，今日紅K +9.0%站回",
-   "code": "6782",
-   "name": "視陽",
-   "date": "2026-11-19",
-   "market": "TSE",
+   "entry_type": "次日開盤進場",
+   "base": 55.3,
+   "price": 55.3,
+   "swing_high": 65.6,
+   "swing_low": 43.8,
+   "pattern_high": 65.6,
+   "pattern_low": 48.5,
+   "a_rally": 0.49771689497716887,
+   "a_amp": 0.3525773195876287,
+   "rally_date": "2026-11-16",
+   "break_date": "2026-11-19",
+   "score": 76.9,
+   "reason": "第1階段漲 50%（08-19→11-16），11-19 跌破 20MA，今日漲停站回",
+   "code": "7767",
+   "name": "仁大資訊",
+   "date": "2026-11-20",
+   "market": "OTC",
    "groups": [
-    "生技醫療"
+    "資訊服務"
    ],
    "targets": {
-    "rally": 364.0489821882952,
-    "amp": 313.85392156862747
+    "rally": 69.06187214611872,
+    "amp": 65.04876288659793
    },
    "leader_of": []
   }
  ],
  "held_back": {
   "market": 0,
-  "group": 1,
+  "group": 0,
   "top_n": 0
  },
  "market_ok": false,
  "rotations": [
-  "生技醫療：科妍 連 3 天未創高，領頭羊換成 浩鼎（4174）",
-  "鋼鐵：佳大 連 3 天未創高，領頭羊換成 大國鋼（8415）"
+  "化學：泓瀚 連 3 天未創高，領頭羊換成 三福化（4755）"
  ],
  "watch": {},
  "strong_groups": {
@@ -51,13 +50,13 @@
   },
   "塑膠": {
    "n": 8,
-   "strong_n": 5,
+   "strong_n": 4,
    "strong": true,
    "leader": "1301"
   },
   "建材營造": {
-   "n": 20,
-   "strong_n": 19,
+   "n": 21,
+   "strong_n": 21,
    "strong": true,
    "leader": "3703"
   },
@@ -68,32 +67,32 @@
    "leader": "2207"
   },
   "其他": {
-   "n": 26,
-   "strong_n": 16,
+   "n": 27,
+   "strong_n": 15,
    "strong": true,
    "leader": "1416"
   },
   "紡織": {
    "n": 7,
-   "strong_n": 7,
+   "strong_n": 6,
    "strong": true,
    "leader": "1476"
   },
   "運動休閒": {
    "n": 12,
-   "strong_n": 12,
+   "strong_n": 11,
    "strong": true,
    "leader": "9904"
   },
   "電機機械": {
    "n": 36,
-   "strong_n": 13,
+   "strong_n": 11,
    "strong": true,
    "leader": "4526"
   },
   "生技醫療": {
    "n": 34,
-   "strong_n": 23,
+   "strong_n": 17,
    "strong": true,
    "leader": "4174"
   },
@@ -101,17 +100,23 @@
    "n": 28,
    "strong_n": 9,
    "strong": true,
-   "leader": "4741"
+   "leader": "4755"
+  },
+  "造紙": {
+   "n": 4,
+   "strong_n": 4,
+   "strong": true,
+   "leader": "1904"
   },
   "鋼鐵": {
    "n": 18,
-   "strong_n": 16,
+   "strong_n": 15,
    "strong": true,
    "leader": "8415"
   },
   "綠能環保": {
    "n": 16,
-   "strong_n": 9,
+   "strong_n": 8,
    "strong": true,
    "leader": "8341"
   },
@@ -123,25 +128,19 @@
   },
   "航運": {
    "n": 21,
-   "strong_n": 20,
+   "strong_n": 19,
    "strong": true,
    "leader": "2603"
   },
   "電腦週邊": {
-   "n": 60,
-   "strong_n": 28,
+   "n": 61,
+   "strong_n": 26,
    "strong": true,
    "leader": "2465"
   },
-  "其他電子": {
-   "n": 46,
-   "strong_n": 18,
-   "strong": true,
-   "leader": "4577"
-  },
   "通信網路": {
    "n": 47,
-   "strong_n": 25,
+   "strong_n": 18,
    "strong": true,
    "leader": "8089"
   },
@@ -153,7 +152,7 @@
   },
   "資訊服務": {
    "n": 23,
-   "strong_n": 13,
+   "strong_n": 9,
    "strong": true,
    "leader": "2468"
   },
@@ -165,7 +164,7 @@
   },
   "金融保險": {
    "n": 30,
-   "strong_n": 27,
+   "strong_n": 21,
    "strong": true,
    "leader": "2880"
   },
@@ -176,11 +175,11 @@
    "leader": "2903"
   },
   "數位雲端": {
-   "n": 12,
-   "strong_n": 5,
+   "n": 13,
+   "strong_n": 6,
    "strong": true,
    "leader": "6870"
   }
  },
- "n_universe": 854
+ "n_universe": 859
 }
