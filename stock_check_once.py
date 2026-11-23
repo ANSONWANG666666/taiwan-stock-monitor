@@ -243,6 +243,9 @@ def detect_alerts(snap: dict, vol_hist: List[int], interval_vol: int) -> List[di
 
 # ── Telegram ─────────────────────────────────────────────────────────
 def send_telegram(text: str) -> bool:
+    import wiki_inbox
+    if wiki_inbox.diverted():          # Wiki 身分：預設寫收件匣不推播
+        return wiki_inbox.append(text)
     if not TOKEN or not CHAT_ID:
         logger.warning("Telegram 未設定，略過")
         return False
@@ -356,7 +359,10 @@ def main():
                 logger.info("  ↳ [NEWS] %s: %s（相關 %d／%d 則）", sym, result["verdict"],
                             result.get("n_relevant", 0), result.get("n_news", 0))
 
-        if send_telegram(format_alert(snap, fresh, pct, news_block)):
+        import wiki_inbox
+        with wiki_inbox.meta("大單監控：" + "、".join(ev["type"] for ev in fresh), sym, snap["name"]):
+            ok = send_telegram(format_alert(snap, fresh, pct, news_block))
+        if ok:
             journal.record("monitor", sym, snap["name"], slot=datetime.now(TZ).strftime("%H:%M"),
                            price=snap["price"], pct=pct, news=result,
                            alerts=",".join(ev["type"] for ev in fresh))

@@ -217,7 +217,9 @@ def intraday_check(now: Optional[datetime] = None, fetch=None, cfg: Config = CFG
         out.append(f"⏱ <b>13:20 盤中</b>｜{html.escape(name)}（{h['code']}）黑飛舞 Day 2：{d['text']}"
                    f"（即時最高 {high:.2f}，收盤後會再確認）")
     if out:
-        send("📤 <b>出場提醒</b>\n" + "\n".join(out))
+        import wiki_inbox
+        with wiki_inbox.meta("出場提醒（盤中）", "、".join(str(h["code"]) for h in todo)):
+            send("📤 <b>出場提醒</b>\n" + "\n".join(out))
     return out
 
 
@@ -238,8 +240,10 @@ def main():
     STATE_FILE.parent.mkdir(parents=True, exist_ok=True)
     STATE_FILE.write_text(json.dumps(state, ensure_ascii=False, indent=1), encoding="utf-8")
     if alerts:
-        send_telegram(f"📤 <b>出場提醒｜{df['date'].max()}</b>\n" + "\n".join(alerts)
-                      + "\n<i>只提醒不下單；達標賣出一半後請在 holdings.yaml 設 sold_half: true</i>")
+        import wiki_inbox
+        with wiki_inbox.meta("出場提醒"):
+            send_telegram(f"📤 <b>出場提醒｜{df['date'].max()}</b>\n" + "\n".join(alerts)
+                          + "\n<i>只提醒不下單；達標賣出一半後請在 holdings.yaml 設 sold_half: true</i>")
     logger.info("持股 %d 檔，提醒 %d 則", len(holdings), len(alerts))
     history.checkpoint(f"出場檢查 {df['date'].max()}")
 

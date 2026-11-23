@@ -46,6 +46,7 @@ import yaml
 
 import history
 import journal
+import wiki_inbox
 from notifier import send_telegram
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
@@ -640,7 +641,9 @@ def run_post(end: date, now: Optional[datetime] = None, df: Optional[pd.DataFram
                 logger.info("冷卻中略過：%s %s", a.code, a.title)
                 continue
             result, block = news(a, settings)
-            if send(alert_card(a, item, temp, block)) or not os.environ.get("TELEGRAM_BOT_TOKEN"):
+            with wiki_inbox.meta(a.title, a.code, item.get("name") or a.name):
+                ok = send(alert_card(a, item, temp, block))
+            if ok or not os.environ.get("TELEGRAM_BOT_TOKEN"):
                 mark_sent(cd, a, now)
                 sent += 1
                 journal.record("watch", a.code, item.get("name") or a.name, slot=a.slot, price=a.price,
@@ -648,15 +651,18 @@ def run_post(end: date, now: Optional[datetime] = None, df: Optional[pd.DataFram
     if baseline:
         msg = (f"🆕 <b>觀察名單新加入 {len(baseline)} 檔｜{data_date} 目前狀態</b>\n"
                "（第一次只列狀態，之後有變化才會個別提醒）\n\n" + "\n".join(baseline))
-        for part in [msg[i:i + 3900] for i in range(0, len(msg), 3900)]:
-            send(part)
+        with wiki_inbox.meta("觀察名單新加入"):
+            for part in [msg[i:i + 3900] for i in range(0, len(msg), 3900)]:
+                send(part)
     cd["_known"] = sorted(known | {w["code"] for w in items})
     n_digest = 0
     if (settings.get("digest") or {}).get("enabled", True):
         try:
             rows = digest(df, settings, {w["code"] for w in items})
             n_digest = len(rows)
-            if rows and send(digest_message(rows, data_date, settings)):
+            with wiki_inbox.meta("大型股回檔摘要"):
+                ok = bool(rows) and send(digest_message(rows, data_date, settings))
+            if ok:
                 for r in rows:
                     journal.record("digest", r["code"], r["name"], slot="L3", price=r["price"], pct=r["pct"],
                                    alerts=r["reason"], date=data_date, industry=r["industry"])
@@ -708,7 +714,9 @@ def run_pre(now: Optional[datetime] = None, ext: Optional[dict] = None, holiday=
     t = gate({**{k: stored.get(k, float("nan")) for k in tw_keys},
               **(ext if ext is not None else external_temperature())},
              settings.get("hy_spread_polarity", "contrarian"))
-    if send("☀️ <b>開盤前市場溫度</b>\n" + temp_card(t)) or not os.environ.get("TELEGRAM_BOT_TOKEN"):
+    with wiki_inbox.meta("開盤前市場溫度"):
+        ok = send("☀️ <b>開盤前市場溫度</b>\n" + temp_card(t))
+    if ok or not os.environ.get("TELEGRAM_BOT_TOKEN"):
         _write_json(CARD_STATE_FILE, {"sent": today})
         return True
     return False

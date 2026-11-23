@@ -302,6 +302,9 @@ def evaluate_signal(klines: List[dict], now: Optional[datetime] = None) -> Dict:
 
 # ── Telegram ────────────────────────────────────────────────────
 def send_telegram(text: str) -> bool:
+    import wiki_inbox
+    if wiki_inbox.diverted():          # Wiki 身分：預設寫收件匣不推播
+        return wiki_inbox.append(text)
     if not TOKEN or not CHAT_ID:
         logger.warning("Telegram 未設定，略過")
         return False

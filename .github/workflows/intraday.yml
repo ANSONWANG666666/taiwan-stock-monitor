@@ -26,18 +26,22 @@ jobs:
   intraday:
     runs-on: ubuntu-latest
     timeout-minutes: 345
+    env:
+      WIKI_TELEGRAM: ${{ vars.WIKI_TELEGRAM || 'false' }}   # Wiki 身分的提醒：false 寫收件匣不推播；repo 變數設 true 恢復推播
 
     steps:
       - name: Checkout 程式碼
         uses: actions/checkout@v4
 
-      - name: Checkout 觀察名單（data 分支，只讀 state/candidates.json）
+      - name: Checkout 觀察名單（data 分支：讀 state/candidates.json、寫 inbox/）
         uses: actions/checkout@v4
         continue-on-error: true
         with:
           ref: data
           path: data-store
-          sparse-checkout: state
+          sparse-checkout: |
+            state
+            inbox
 
       - name: Checkout 訊號紀錄簿（journal 分支）
         uses: actions/checkout@v4
@@ -75,6 +79,7 @@ jobs:
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TG_TOKEN_WIKI || secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID:   ${{ secrets.TELEGRAM_CHAT_ID }}
+          TG_SENDER:          ${{ secrets.TG_TOKEN_WIKI && 'WIKI' || 'DEFAULT' }}
           WATCH_STATE_DIR:    data-store/state
         run: python watch_alert.py pre
 
@@ -82,6 +87,7 @@ jobs:
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TG_TOKEN_SENTRY || secrets.TG_TOKEN_WIKI || secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID:   ${{ secrets.TELEGRAM_CHAT_ID }}
+          TG_SENDER:          ${{ secrets.TG_TOKEN_SENTRY && 'SENTRY' || secrets.TG_TOKEN_WIKI && 'WIKI' || 'DEFAULT' }}
           TYPESAFE_API_KEY:   ${{ secrets.TYPESAFE_API_KEY }}
           JEV_DAILY_LIMIT:    '200'          # 大單監控＋盤中選股合計
           JOURNAL_DIR:        journal-data
@@ -94,6 +100,12 @@ jobs:
           INTRADAY_SCREENER:  '0'            # 盤中量價齊揚選股：關閉；改 '1' 恢復
           RT_EVERY_SEC:       '20'
         run: python intraday_loop.py
+
+      # Wiki 身分的提醒（WIKI_TELEGRAM 沒開時不推播）寫在 data 分支 inbox/jarvis/，給盤前早報分析用
+      - name: 儲存 Wiki 收件匣
+        if: always()
+        continue-on-error: true
+        run: python wiki_inbox.py flush
 
       - name: 儲存訊號紀錄
         if: always()
