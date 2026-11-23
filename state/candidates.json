@@ -1,32 +1,32 @@
 {
- "date": "2026-11-20",
+ "date": "2026-11-23",
  "candidates": [],
  "observe": [
   {
    "pattern": "穿山二龍",
    "entry_type": "次日開盤進場",
-   "base": 55.3,
-   "price": 55.3,
-   "swing_high": 65.6,
-   "swing_low": 43.8,
-   "pattern_high": 65.6,
-   "pattern_low": 48.5,
-   "a_rally": 0.49771689497716887,
-   "a_amp": 0.3525773195876287,
-   "rally_date": "2026-11-16",
-   "break_date": "2026-11-19",
-   "score": 76.9,
-   "reason": "第1階段漲 50%（08-19→11-16），11-19 跌破 20MA，今日漲停站回",
-   "code": "7767",
-   "name": "仁大資訊",
-   "date": "2026-11-20",
+   "base": 111.0,
+   "price": 111.0,
+   "swing_high": 132.0,
+   "swing_low": 49.2,
+   "pattern_high": 132.0,
+   "pattern_low": 86.5,
+   "a_rally": 1.6829268292682924,
+   "a_amp": 0.5260115606936415,
+   "rally_date": "2026-10-29",
+   "break_date": "2026-11-17",
+   "score": 91.9,
+   "reason": "第1階段漲 168%（09-08→10-29），11-17 跌破 20MA，今日漲停站回",
+   "code": "6925",
+   "name": "意藍",
+   "date": "2026-11-23",
    "market": "OTC",
    "groups": [
-    "資訊服務"
+    "數位雲端"
    ],
    "targets": {
-    "rally": 69.06187214611872,
-    "amp": 65.04876288659793
+    "rally": 204.40243902439022,
+    "amp": 140.19364161849708
    },
    "leader_of": []
   }
@@ -38,7 +38,10 @@
  },
  "market_ok": false,
  "rotations": [
-  "化學：泓瀚 連 3 天未創高，領頭羊換成 三福化（4755）"
+  "建材營造：欣陸 連 3 天未創高，領頭羊換成 潤弘（2597）",
+  "其他電子：達航科技 連 3 天未創高，領頭羊換成 安普新（6743）",
+  "金融保險：華南金 連 3 天未創高，領頭羊換成 兆豐金（2886）",
+  "數位雲端：騰雲 連 3 天未創高，領頭羊換成 資拓宏宇（6614）"
  ],
  "watch": {},
  "strong_groups": {
@@ -48,138 +51,102 @@
    "strong": true,
    "leader": "1232"
   },
-  "塑膠": {
-   "n": 8,
-   "strong_n": 4,
-   "strong": true,
-   "leader": "1301"
-  },
   "建材營造": {
    "n": 21,
-   "strong_n": 21,
+   "strong_n": 17,
    "strong": true,
-   "leader": "3703"
+   "leader": "2597"
   },
   "汽車": {
    "n": 14,
-   "strong_n": 8,
+   "strong_n": 7,
    "strong": true,
    "leader": "2207"
   },
   "其他": {
    "n": 27,
-   "strong_n": 15,
+   "strong_n": 12,
    "strong": true,
    "leader": "1416"
   },
   "紡織": {
    "n": 7,
-   "strong_n": 6,
+   "strong_n": 4,
    "strong": true,
    "leader": "1476"
   },
   "運動休閒": {
    "n": 12,
-   "strong_n": 11,
+   "strong_n": 5,
    "strong": true,
    "leader": "9904"
   },
-  "電機機械": {
-   "n": 36,
-   "strong_n": 11,
-   "strong": true,
-   "leader": "4526"
-  },
   "生技醫療": {
-   "n": 34,
-   "strong_n": 17,
+   "n": 35,
+   "strong_n": 13,
    "strong": true,
    "leader": "4174"
   },
-  "化學": {
-   "n": 28,
-   "strong_n": 9,
-   "strong": true,
-   "leader": "4755"
-  },
-  "造紙": {
-   "n": 4,
-   "strong_n": 4,
-   "strong": true,
-   "leader": "1904"
-  },
   "鋼鐵": {
    "n": 18,
-   "strong_n": 15,
+   "strong_n": 12,
    "strong": true,
    "leader": "8415"
   },
   "綠能環保": {
-   "n": 16,
-   "strong_n": 8,
+   "n": 17,
+   "strong_n": 7,
    "strong": true,
    "leader": "8341"
   },
-  "橡膠": {
-   "n": 4,
-   "strong_n": 4,
-   "strong": true,
-   "leader": "2105"
-  },
   "航運": {
    "n": 21,
-   "strong_n": 19,
+   "strong_n": 14,
    "strong": true,
    "leader": "2603"
   },
   "電腦週邊": {
    "n": 61,
-   "strong_n": 26,
+   "strong_n": 25,
    "strong": true,
    "leader": "2465"
   },
+  "其他電子": {
+   "n": 46,
+   "strong_n": 16,
+   "strong": true,
+   "leader": "6743"
+  },
   "通信網路": {
-   "n": 47,
-   "strong_n": 18,
+   "n": 46,
+   "strong_n": 19,
    "strong": true,
    "leader": "8089"
   },
   "電子通路": {
    "n": 17,
-   "strong_n": 8,
+   "strong_n": 9,
    "strong": true,
    "leader": "2347"
   },
-  "資訊服務": {
-   "n": 23,
-   "strong_n": 9,
-   "strong": true,
-   "leader": "2468"
-  },
   "觀光餐旅": {
    "n": 5,
-   "strong_n": 5,
+   "strong_n": 4,
    "strong": true,
    "leader": "2723"
   },
   "金融保險": {
    "n": 30,
-   "strong_n": 21,
+   "strong_n": 12,
    "strong": true,
-   "leader": "2880"
-  },
-  "貿易百貨": {
-   "n": 5,
-   "strong_n": 4,
-   "strong": true,
-   "leader": "2903"
+   "leader": "2886"
   },
   "數位雲端": {
    "n": 13,
-   "strong_n": 6,
+   "strong_n": 5,
    "strong": true,
-   "leader": "6870"
+   "leader": "6614"
   }
  },
- "n_universe": 859
+ "n_universe": 860
 }
