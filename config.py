@@ -97,6 +97,9 @@ class Config:
     RT_COOLDOWN_MIN: int = 30         # 同一檔同一訊號 N 分鐘內不重複
     RT_WATCH_FORMING: bool = False    # 是否也盯「還在整理、尚未突破」的型態（未經回測，預設不盯）
 
+    # ── 推播 ──────────────────────────────────────────────────────
+    WIKI_TELEGRAM: bool = False       # Wiki 身分的提醒是否推 Telegram；預設不推，改寫 data 分支 inbox/jarvis/（見 wiki_inbox.py）
+
     @property
     def observe_patterns(self) -> tuple:
         return tuple(p.strip() for p in str(self.OBSERVE_PATTERNS).split(",") if p.strip())

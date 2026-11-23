@@ -302,7 +302,10 @@ def tick(now: Optional[datetime] = None, fetch: Optional[Callable] = None,
     if alerts:
         for a in alerts:
             logger.info("  %s %s %s %s", a["code"], a["name"], a["signal"], a["reason"])
-        send(format_message(alerts, now))
+        import wiki_inbox
+        uniq = lambda k: "、".join(dict.fromkeys(str(a[k]) for a in alerts))
+        with wiki_inbox.meta("盤中即時：" + uniq("signal"), uniq("code"), uniq("name")):
+            send(format_message(alerts, now))
     return alerts
 
 

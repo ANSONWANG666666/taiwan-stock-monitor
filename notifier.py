@@ -3,6 +3,7 @@ Telegram 推播（共用）
 
 沿用 repo 原本的 Telegram bot：環境變數 TELEGRAM_BOT_TOKEN、TELEGRAM_CHAT_ID。
 訊息使用 HTML 格式；超過 Telegram 單則 4096 字上限時自動分段。
+Wiki 身分（TG_SENDER=WIKI）的訊息預設不推播，改寫進 data 分支收件匣（wiki_inbox.py；WIKI_TELEGRAM=true 恢復）。
 """
 
 import html
@@ -31,6 +32,9 @@ def _split(text: str, limit: int = LIMIT) -> List[str]:
 
 
 def send_telegram(text: str, token: Optional[str] = None, chat_id: Optional[str] = None) -> bool:
+    import wiki_inbox
+    if wiki_inbox.diverted():
+        return wiki_inbox.append(text)
     token = token or os.environ.get("TELEGRAM_BOT_TOKEN", "")
     chat_id = chat_id or os.environ.get("TELEGRAM_CHAT_ID", "")
     if not token or not chat_id:

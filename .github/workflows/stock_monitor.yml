@@ -16,10 +16,20 @@ jobs:
   monitor:
     runs-on: ubuntu-latest
     timeout-minutes: 8
+    env:
+      WIKI_TELEGRAM: ${{ vars.WIKI_TELEGRAM || 'false' }}   # Wiki 身分的提醒：false 寫收件匣不推播；repo 變數設 true 恢復推播
 
     steps:
       - name: Checkout 程式碼
         uses: actions/checkout@v4
+
+      - name: Checkout Wiki 收件匣（data 分支 inbox/）
+        uses: actions/checkout@v4
+        continue-on-error: true
+        with:
+          ref: data
+          path: data-store
+          sparse-checkout: inbox
 
       - name: Checkout 訊號紀錄簿（journal 分支）
         uses: actions/checkout@v4
@@ -52,6 +62,7 @@ jobs:
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TG_TOKEN_RADAR || secrets.TG_TOKEN_WIKI || secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID:   ${{ secrets.TELEGRAM_CHAT_ID }}
+          TG_SENDER:          ${{ secrets.TG_TOKEN_RADAR && 'RADAR' || secrets.TG_TOKEN_WIKI && 'WIKI' || 'DEFAULT' }}
           TYPESAFE_API_KEY:   ${{ secrets.TYPESAFE_API_KEY }}
           JEV_DAILY_LIMIT:    '150'
           JOURNAL_DIR:        journal-data   # 未設定時不做新聞查證
@@ -59,6 +70,12 @@ jobs:
           VOLUME_SPIKE_RATIO:  '3.0'
           VOLUME_SPIKE_MIN:    '200'
         run: python stock_check_once.py
+      # Wiki 身分的提醒（WIKI_TELEGRAM 沒開時不推播）寫在 data 分支 inbox/jarvis/，給盤前早報分析用
+      - name: 儲存 Wiki 收件匣
+        if: always()
+        continue-on-error: true
+        run: python wiki_inbox.py flush
+
       # 訊號紀錄簿存在 journal 分支；失敗會重試，不影響推播
       - name: 儲存訊號紀錄
         if: always()
