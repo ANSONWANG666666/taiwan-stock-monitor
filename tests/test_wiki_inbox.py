@@ -84,10 +84,9 @@ def test_telegram_when_enabled_or_other_role(box, monkeypatch, sender, flag):
     assert not d.exists()
 
 
-def test_watch_alert_rows_have_type_code_name(box, tmp_path, monkeypatch):
-    d, posted = box
+def run_watch(tmp_path, monkeypatch, force=False):
     (tmp_path / "watchlist.yaml").write_text(WATCH_YAML, encoding="utf-8")
-    (tmp_path / "journal").mkdir()
+    (tmp_path / "journal").mkdir(exist_ok=True)
     monkeypatch.setattr(wa, "WATCHLIST_FILE", tmp_path / "watchlist.yaml")
     monkeypatch.setattr(wa, "COOLDOWN_FILE", tmp_path / "state" / "watch_cooldown.json")
     monkeypatch.setattr(wa, "TEMP_FILE", tmp_path / "state" / "market_temp.json")
@@ -98,18 +97,36 @@ def test_watch_alert_rows_have_type_code_name(box, tmp_path, monkeypatch):
     kiq[-1] = kiq[-21:-1].max() * 0.88                                      # 回檔 12% → 第二級
     df = market_df(n, special={"3017": kiq})
     now = datetime(2026, 10, 16, 15, 20, tzinfo=TZ)
-    wa._write_json(wa.COOLDOWN_FILE, {"_known": ["3017", "8888"]})
-    res = wa.run_post(datetime(2026, 10, 16).date(), now=now, df=df, ext=NO_EXT,
-                      news=lambda a, s: (None, ""), foreign=lambda c, d: pd.Series(dtype=float))
+    if not force:
+        wa._write_json(wa.COOLDOWN_FILE, {"_known": ["3017", "8888"]})
+    return wa.run_post(datetime(2026, 10, 16).date(), now=now, df=df, ext=NO_EXT, force=force,
+                       news=lambda a, s: (None, ""), foreign=lambda c, d: pd.Series(dtype=float))
+
+
+@pytest.mark.parametrize("sender", ["WIKI", "SENTRY", "DEFAULT", ""])
+def test_watch_alert_always_goes_to_inbox(box, tmp_path, monkeypatch, sender):
+    """觀察名單提醒不管用誰的 bot（Sentry 有自己的金鑰也一樣），一律寫收件匣"""
+    d, posted = box
+    monkeypatch.setenv("TG_SENDER", sender)
+    res = run_watch(tmp_path, monkeypatch)
     assert res["sent"] >= 1 and posted == []
     today = datetime.now(TZ).strftime("%Y-%m-%d")
     r = [x for x in rows(d, today) if x["code"] == "3017"]
     assert r and r[0]["name"] == "奇鋐" and "第二級" in r[0]["type"]
     assert "核心投資理由" in r[0]["text"] and "<b>" not in r[0]["text"]
     # 已寫入收件匣也算「送達」：冷卻有記下，重跑不會重複寫
-    again = wa.run_post(datetime(2026, 10, 16).date(), now=now, df=df, ext=NO_EXT, force=True,
-                        news=lambda a, s: (None, ""), foreign=lambda c, d: pd.Series(dtype=float))
-    assert again["sent"] == 0
+    assert run_watch(tmp_path, monkeypatch, force=True)["sent"] == 0
+    # 收件匣只影響觀察名單這一步：同一個行程裡其他成員的推播照常送出
+    assert notifier.send_telegram("hi")
+    assert (posted == []) == (sender == "WIKI")
+
+
+def test_watch_alert_pushes_when_enabled(box, tmp_path, monkeypatch):
+    d, posted = box
+    monkeypatch.setenv("TG_SENDER", "SENTRY")
+    monkeypatch.setenv("WIKI_TELEGRAM", "true")
+    assert run_watch(tmp_path, monkeypatch)["sent"] >= 1
+    assert posted and not d.exists()
 
 
 def git(cwd, *a):

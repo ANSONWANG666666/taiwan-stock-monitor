@@ -6,8 +6,11 @@ Wiki 收件匣：Wiki 身分的提醒預設不推 Telegram，改寫進 data 分�
     {"time": "2026-11-23T15:12:03+08:00", "type": "推翻條件", "code": "2330", "name": "台積電",
      "text": "完整訊息文字（已去掉 HTML 標籤）"}
 
-哪些訊息算「Wiki 身分」：workflow 在每個步驟用 TG_SENDER 標出這一步實際用哪個成員的 bot
-（例如 Sentry 沒設金鑰、退回 Wiki 的 bot 時，TG_SENDER=WIKI）。
+哪些訊息寫收件匣：
+  觀察名單提醒（watch_alert.py post：回檔、推翻條件、價格異常、新加入狀態、大型股回檔摘要）
+      不管用誰的 bot，一律寫收件匣
+  其他步驟  workflow 用 TG_SENDER 標出實際用哪個成員的 bot；是 Wiki 的才寫收件匣
+      （例如開盤前溫度卡，或 Sentry 沒設金鑰、退回 Wiki 的 bot 時）
 WIKI_TELEGRAM=true（config.py 或 repo 變數）時恢復直接推播。
 
     python wiki_inbox.py flush    把收件匣提交並推到 data 分支（workflow 最後一步，沒有新內容就略過）
@@ -27,7 +30,7 @@ import sys
 import time
 from datetime import datetime
 from pathlib import Path
-from typing import Optional
+from typing import Callable, Optional
 from zoneinfo import ZoneInfo
 
 from config import Config, _env
@@ -37,6 +40,7 @@ TZ = ZoneInfo("Asia/Taipei")
 REL_DIR = Path("inbox") / "jarvis"
 
 _meta: contextvars.ContextVar[dict] = contextvars.ContextVar("wiki_inbox_meta", default={})
+_always: contextvars.ContextVar[bool] = contextvars.ContextVar("wiki_inbox_always", default=False)
 
 
 def data_dir() -> Path:
@@ -48,10 +52,21 @@ def inbox_dir() -> Path:
 
 
 def diverted() -> bool:
-    """這則訊息是 Wiki 身分、且 WIKI_TELEGRAM 沒開 → 寫收件匣不推播"""
-    if os.environ.get("TG_SENDER", "").strip().upper() != "WIKI":
+    """這則訊息是 Wiki 身分（或觀察名單提醒）、且 WIKI_TELEGRAM 沒開 → 寫收件匣不推播"""
+    if not _always.get() and os.environ.get("TG_SENDER", "").strip().upper() != "WIKI":
         return False
     return not _env("WIKI_TELEGRAM", Config.WIKI_TELEGRAM)
+
+
+def always(send: Callable[[str], bool]) -> Callable[[str], bool]:
+    """包住送出函式：透過它送出的訊息不管用誰的 bot，一律寫收件匣（觀察名單提醒用）"""
+    def wrapped(text: str) -> bool:
+        tok = _always.set(True)
+        try:
+            return send(text)
+        finally:
+            _always.reset(tok)
+    return wrapped
 
 
 @contextlib.contextmanager

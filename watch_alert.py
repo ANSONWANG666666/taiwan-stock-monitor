@@ -585,6 +585,7 @@ def run_post(end: date, now: Optional[datetime] = None, df: Optional[pd.DataFram
              ext: Optional[dict] = None, force: bool = False, news=_news, foreign=finmind_foreign_net,
              send=send_telegram) -> dict:
     now = now or datetime.now(TZ)
+    send = wiki_inbox.always(send)      # 觀察名單提醒不管用誰的 bot，一律寫 Wiki 收件匣（WIKI_TELEGRAM=true 恢復推播）
     cfg = load_watchlist()
     settings = cfg["settings"]
     df = load_market(end) if df is None else df
